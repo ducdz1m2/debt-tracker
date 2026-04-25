@@ -122,9 +122,14 @@ export default function FriendsPage() {
     setLoading(false)
   }
 
-  const friendIds = friends.map(f => f.id)
-  const pendingIds = pendingRequests.map(p => p.id)
-  const sentIds = sentRequests.map(s => s.id)
+  // Deduplicate arrays by ID
+  const uniqueFriends = Array.from(new Map(friends.map(f => [f.id, f])).values())
+  const uniquePending = Array.from(new Map(pendingRequests.map(p => [p.id, p])).values())
+  const uniqueSent = Array.from(new Map(sentRequests.map(s => [s.id, s])).values())
+
+  const friendIds = uniqueFriends.map(f => f.id)
+  const pendingIds = uniquePending.map(p => p.id)
+  const sentIds = uniqueSent.map(s => s.id)
 
   return (
     <AuthGuard>
@@ -141,12 +146,12 @@ export default function FriendsPage() {
           </div>
 
           {/* Pending Requests */}
-          {pendingRequests.length > 0 && (
+          {uniquePending.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-700">Lời mời kết bạn</h2>
               <div className="space-y-3">
-                {pendingRequests.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                {uniquePending.map(user => (
+                  <div key={`pending-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {user.avatar_url ? (
                         <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
@@ -175,7 +180,7 @@ export default function FriendsPage() {
               {allUsers
                 .filter(u => !friendIds.includes(u.id) && !pendingIds.includes(u.id) && !sentIds.includes(u.id))
                 .map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {user.avatar_url ? (
                         <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
@@ -200,11 +205,11 @@ export default function FriendsPage() {
           </div>
 
           {/* Sent Requests */}
-          {sentRequests.length > 0 && (
+          {uniqueSent.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-700">Lời mời đã gửi</h2>
               <div className="space-y-3">
-                {sentRequests.map(user => (
+                {uniqueSent.map(user => (
                   <div key={`sent-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {user.avatar_url ? (
@@ -225,8 +230,8 @@ export default function FriendsPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Danh sách bạn bè</h2>
             <div className="space-y-3">
-              {friends.map(user => (
-                <div key={user.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              {uniqueFriends.map(user => (
+                <div key={`friend-${user.id}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
@@ -235,7 +240,7 @@ export default function FriendsPage() {
                   <span className="font-medium">{user.username}</span>
                 </div>
               ))}
-              {friends.length === 0 && (
+              {uniqueFriends.length === 0 && (
                 <p className="text-gray-500 text-center py-4">Chưa có bạn bè nào</p>
               )}
             </div>
