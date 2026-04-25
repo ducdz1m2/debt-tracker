@@ -33,8 +33,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       const filtered = initialDebts.filter(d => 
         d.assigned_to === currentUserId || d.created_by === currentUsername
       )
-      setDebts(filtered)
-      setPreviousDebtIds(new Set(filtered.map(d => d.id)))
+      // Deduplicate by ID to prevent duplicate keys
+      const uniqueDebts = Array.from(
+        new Map(filtered.map(d => [d.id, d])).values()
+      )
+      setDebts(uniqueDebts)
+      setPreviousDebtIds(new Set(uniqueDebts.map(d => d.id)))
     }
   }, [currentUserId, currentUsername, initialDebts])
 
@@ -91,8 +95,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
             const filteredDebts = updatedDebts.filter(d => 
               d.assigned_to === currentUserId || d.created_by === currentUsername
             )
-            setDebts(filteredDebts)
-            setPreviousDebtIds(new Set(filteredDebts.map(d => d.id)))
+            // Deduplicate by ID to prevent duplicate keys
+            const uniqueDebts = Array.from(
+              new Map(filteredDebts.map(d => [d.id, d])).values()
+            )
+            setDebts(uniqueDebts)
+            setPreviousDebtIds(new Set(uniqueDebts.map(d => d.id)))
           }
           setLoading(false)
         }
