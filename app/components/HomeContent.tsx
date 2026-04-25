@@ -8,6 +8,7 @@ import ProductCard from './ProductCard'
 import ProductForm from './ProductForm'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
+import Swal from 'sweetalert2'
 
 interface HomeContentProps {
   initialDebts: any[]
@@ -99,11 +100,21 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
     })
 
     if (res.ok) {
-      alert('Đã thêm sản phẩm!')
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã thêm sản phẩm!',
+        timer: 1500,
+        showConfirmButton: false
+      })
       setShowProductForm(false)
       loadProducts(userId)
     } else {
-      alert('Lỗi thêm sản phẩm')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi thêm sản phẩm'
+      })
     }
   }
 
@@ -111,7 +122,18 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
     const userId = localStorage.getItem('user_id')
     if (!userId) return
 
-    if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return
+    const result = await Swal.fire({
+      title: 'Xác nhận',
+      text: 'Bạn có chắc muốn xóa sản phẩm này?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Có, xóa!',
+      cancelButtonText: 'Hủy'
+    })
+
+    if (!result.isConfirmed) return
 
     const res = await fetch('/api/products/delete', {
       method: 'POST',
@@ -120,10 +142,20 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
     })
 
     if (res.ok) {
-      alert('Đã xóa sản phẩm!')
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã xóa sản phẩm!',
+        timer: 1500,
+        showConfirmButton: false
+      })
       loadProducts(userId)
     } else {
-      alert('Lỗi xóa sản phẩm')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi xóa sản phẩm'
+      })
     }
   }
 
@@ -143,7 +175,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
 
   const handleAddManualToCart = () => {
     if (!manualTitle || !manualPrice) {
-      alert('Vui lòng điền đầy đủ thông tin')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Thiếu thông tin',
+        text: 'Vui lòng điền đầy đủ thông tin'
+      })
       return
     }
 
@@ -192,7 +228,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      alert('Giỏ nợ trống!')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Giỏ nợ trống',
+        text: 'Vui lòng thêm sản phẩm vào giỏ trước khi tạo nợ'
+      })
       return
     }
     setShowAssigneeModal(true)
@@ -200,7 +240,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
 
   const handleConfirmDebt = async () => {
     if (selectedAssignees.length === 0) {
-      alert('Vui lòng chọn người nợ')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn người nợ',
+        text: 'Vui lòng chọn ít nhất một người nợ'
+      })
       return
     }
 
@@ -230,12 +274,22 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
       .insert(debtRecords)
 
     if (error) {
-      alert('Lỗi khi tạo nợ: ' + error.message)
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi khi tạo nợ: ' + error.message
+      })
     } else {
       const message = selectedAssignees.length === 1
         ? 'Đã tạo nợ thành công!'
         : `Đã tạo ${selectedAssignees.length} khoản nợ thành công! Mỗi người nợ ${splitAmount.toLocaleString('vi-VN')}đ.`
-      alert(message)
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+      })
       setCart([])
       setSelectedAssignees([])
       setShowAssigneeModal(false)
