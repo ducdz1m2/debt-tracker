@@ -18,6 +18,7 @@ export default function FriendsPage() {
   const [sentRequests, setSentRequests] = useState<User[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -25,6 +26,8 @@ export default function FriendsPage() {
       const userId = localStorage.getItem('user_id')
       const username = localStorage.getItem('username')
       if (!userId) return
+
+      setCurrentUserId(userId)
 
       // Load friends
       const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
@@ -53,10 +56,21 @@ export default function FriendsPage() {
       if (users) {
         setAllUsers(users.filter((u: User) => u.id !== userId))
       }
+    }
 
-      // Subscribe to realtime changes for friends table
+    loadData()
+  }, [])
+
+  // Separate useEffect for realtime subscription
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const setupRealtime = async () => {
+      const { supabase } = await import('@/lib/supabaseClient')
+      const channelName = `friends-changes-${currentUserId}`
+
       const channel = supabase
-        .channel('friends-changes')
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -66,17 +80,17 @@ export default function FriendsPage() {
           },
           async (payload) => {
             // Refresh data on any change
-            const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
+            const friendsRes = await fetch(`/api/friends/list?userId=${currentUserId}`)
             const friendsData = await friendsRes.json()
             if (friendsData.friends) {
               setFriends(friendsData.friends)
             }
-            const pendingRes = await fetch(`/api/friends/pending?userId=${userId}`)
+            const pendingRes = await fetch(`/api/friends/pending?userId=${currentUserId}`)
             const pendingData = await pendingRes.json()
             if (pendingData.requests) {
               setPendingRequests(pendingData.requests)
             }
-            const sentRes = await fetch(`/api/friends/sent?userId=${userId}`)
+            const sentRes = await fetch(`/api/friends/sent?userId=${currentUserId}`)
             const sentData = await sentRes.json()
             if (sentData.requests) {
               setSentRequests(sentData.requests)
@@ -86,7 +100,7 @@ export default function FriendsPage() {
             if (payload.eventType === 'INSERT') {
               const newFriend = payload.new as any
               // Notify when someone sends a friend request to current user
-              if (newFriend.friend_id === userId && newFriend.status === 'pending') {
+              if (newFriend.friend_id === currentUserId && newFriend.status === 'pending') {
                 if ('Notification' in window && Notification.permission === 'granted') {
                   // Get sender's username
                   const { data: sender } = await supabase
@@ -104,7 +118,7 @@ export default function FriendsPage() {
               const updatedFriend = payload.new as any
               const oldFriend = payload.old as any
               // Notify when someone accepts friend request
-              if (updatedFriend.user_id === userId && oldFriend.status === 'pending' && updatedFriend.status === 'accepted') {
+              if (updatedFriend.user_id === currentUserId && oldFriend.status === 'pending' && updatedFriend.status === 'accepted') {
                 if ('Notification' in window && Notification.permission === 'granted') {
                   const { data: accepter } = await supabase
                     .from('users')
@@ -127,8 +141,11 @@ export default function FriendsPage() {
       }
     }
 
-    loadData()
-  }, [])
+    const cleanup = setupRealtime()
+    return () => {
+      cleanup.then(cleanupFn => cleanupFn?.())
+    }
+  }, [currentUserId])
 
   const handleAddFriend = async (friendId: string) => {
     const userId = localStorage.getItem('user_id')
