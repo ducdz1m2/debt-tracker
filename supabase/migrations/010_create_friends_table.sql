@@ -12,23 +12,12 @@ CREATE TABLE IF NOT EXISTS friends (
 -- Enable RLS
 ALTER TABLE friends ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can see their own friend relationships
-CREATE POLICY "Users can view own friends"
-ON friends FOR SELECT
+-- Policy: Allow public access (using custom auth)
+CREATE POLICY "Public access for friends"
+ON friends FOR ALL
 TO public
-USING (user_id = auth.uid() OR friend_id = auth.uid());
-
--- Policy: Users can create friend requests
-CREATE POLICY "Users can create friend requests"
-ON friends FOR INSERT
-TO public
-WITH CHECK (user_id = auth.uid());
-
--- Policy: Users can update friend requests (accept/reject)
-CREATE POLICY "Users can update friend requests"
-ON friends FOR UPDATE
-TO public
-USING (friend_id = auth.uid() OR user_id = auth.uid());
+USING (true)
+WITH CHECK (true);
 
 -- Enable Realtime for friends table
 begin;
