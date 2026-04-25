@@ -34,7 +34,9 @@ export default function DebtForm() {
         const res = await fetch(`/api/friends/list?userId=${userId}`)
         const data = await res.json()
         if (data.friends) {
-          setUsers(data.friends)
+          // Deduplicate by ID
+          const uniqueFriends = Array.from(new Map(data.friends.map((f: User) => [f.id, f])).values())
+          setUsers(uniqueFriends)
         }
       }
     }
