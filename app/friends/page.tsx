@@ -293,7 +293,10 @@ export default function FriendsPage() {
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                       )}
-                      <span className="font-medium">{user.full_name || user.username}</span>
+                      <div>
+                        <span className="font-medium">{user.full_name || user.username}</span>
+                        <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                      </div>
                     </div>
                     <button
                       onClick={() => handleAcceptFriend(user.id)}
@@ -329,7 +332,10 @@ export default function FriendsPage() {
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                     )}
-                    <span className="font-medium">{user.full_name || user.username}</span>
+                    <div>
+                      <span className="font-medium">{user.full_name || user.username}</span>
+                      <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleAddFriend(user.id)}
@@ -361,7 +367,10 @@ export default function FriendsPage() {
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">👤</div>
                       )}
-                      <span className="font-medium">{user.full_name || user.username}</span>
+                      <div>
+                        <span className="font-medium">{user.full_name || user.username}</span>
+                        <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                      </div>
                       <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Đang chờ phản hồi</span>
                     </div>
                   </div>
@@ -382,7 +391,10 @@ export default function FriendsPage() {
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                     )}
-                    <span className="font-medium">{user.full_name || user.username}</span>
+                    <div>
+                      <span className="font-medium">{user.full_name || user.username}</span>
+                      <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDeleteFriend(user.id)}
