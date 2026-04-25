@@ -34,6 +34,7 @@ interface CartItem {
 interface User {
   id: string
   username: string
+  avatar_url?: string
 }
 
 export default function HomeContent({ initialDebts }: HomeContentProps) {
@@ -424,7 +425,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
               <h2 className="text-xl font-semibold mb-4 text-gray-700">Chọn người nợ</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
                 {users.map(user => (
-                  <label key={user.id} className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded">
+                  <label key={user.id} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
                     <input
                       type="checkbox"
                       value={user.id}
@@ -438,6 +439,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                       }}
                       className="w-4 h-4 text-blue-600 rounded"
                     />
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">👤</div>
+                    )}
                     <span>{user.username}</span>
                   </label>
                 ))}
