@@ -13,6 +13,7 @@ interface Debt {
   created_by?: string
   status?: string
   assigned_to?: string
+  deleted_at?: string
 }
 
 interface DebtListProps {
@@ -66,17 +67,21 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     return () => clearInterval(interval)
   }, [supabase, currentUser, previousDebtIds])
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa khoản nợ này?')) {
+  const handleHide = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?')) {
       return
     }
 
-    const { error } = await supabase.from('debts').delete().eq('id', id)
+    const { error } = await supabase
+      .from('debts')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
 
     if (error) {
-      alert('Lỗi khi xóa: ' + error.message)
+      alert('Lỗi khi đánh dấu: ' + error.message)
     } else {
       setDebts(debts.filter((debt) => debt.id !== id))
+      alert('Đã đánh dấu thành thanh toán!')
     }
   }
 
@@ -124,28 +129,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   if (debts.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-        <p>Chưa có khoản nợ nào</p>
-        <div className="mt-4 space-y-2">
-          {'Notification' in window && Notification.permission === 'default' && (
-            <button
-              onClick={() => Notification.requestPermission()}
-              className="block w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Bật thông báo
-            </button>
-          )}
-          {'Notification' in window && Notification.permission === 'granted' && (
-            <button
-              onClick={() => new Notification('Test thông báo', { body: 'Thông báo đang hoạt động!' })}
-              className="block w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              Test thông báo
-            </button>
-          )}
-          {'Notification' in window && Notification.permission === 'denied' && (
-            <p className="text-red-500 text-sm">Thông báo đã bị chặn. Vào settings để bật lại.</p>
-          )}
-        </div>
+        Chưa có khoản nợ nào
       </div>
     )
   }
@@ -198,10 +182,10 @@ export default function DebtList({ initialDebts }: DebtListProps) {
           
           {debt.created_by === currentUser?.email && (
             <button
-              onClick={() => handleDelete(debt.id)}
+              onClick={() => handleHide(debt.id)}
               className="mt-3 bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
             >
-              Xóa
+              Thanh toán
             </button>
           )}
         </div>

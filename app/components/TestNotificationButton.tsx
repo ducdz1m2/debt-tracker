@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-export default function TestNotificationButton() {
+export default function NotificationPermissionButton() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
 
   useEffect(() => {
@@ -24,18 +24,9 @@ export default function TestNotificationButton() {
           new Notification('Thông báo đã bật!', { body: 'Bạn sẽ nhận được thông báo khi có khoản nợ mới.' })
         }
       })
-    } else if (permission === 'granted') {
-      new Notification('Test thông báo', { body: 'Thông báo đang hoạt động!' })
-    } else {
+    } else if (permission === 'denied') {
       alert('Thông báo đã bị chặn. Vào browser settings để bật lại.')
     }
-  }
-
-  const getButtonText = () => {
-    if (!('Notification' in window)) return '❌ Không hỗ trợ'
-    if (permission === 'default') return '🔔 Bật thông báo'
-    if (permission === 'granted') return '🔔 Test thông báo'
-    return '🔕 Đã chặn'
   }
 
   const getButtonColor = () => {
@@ -48,9 +39,10 @@ export default function TestNotificationButton() {
   return (
     <button
       onClick={handleClick}
-      className={`${getButtonColor()} text-white px-4 py-2 rounded-lg transition-colors`}
+      className={`${getButtonColor()} text-white px-3 py-2 rounded-lg transition-colors`}
+      title={permission === 'default' ? 'Bật thông báo' : permission === 'granted' ? 'Đã bật' : 'Đã chặn'}
     >
-      {getButtonText()}
+      🔔
     </button>
   )
 }
