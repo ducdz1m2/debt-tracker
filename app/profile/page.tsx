@@ -19,9 +19,11 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -46,6 +48,40 @@ export default function ProfilePage() {
 
     loadUser()
   }, [supabase])
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const userId = localStorage.getItem('user_id')
+      if (!userId) return
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${userId}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        alert('Lỗi upload ảnh: ' + uploadError.message)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      setAvatarUrl(publicUrl)
+      setAvatarFile(null)
+    } catch (error) {
+      alert('Lỗi upload ảnh')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,15 +193,24 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
-                  URL Avatar
+                  Avatar
                 </label>
-                <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/avatar.jpg"
-                />
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setAvatarFile(file)
+                        handleAvatarUpload(file)
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={uploading}
+                  />
+                  {uploading && <span className="text-sm text-gray-500">Đang upload...</span>}
+                </div>
               </div>
 
               <div className="border-t pt-4 mt-4">

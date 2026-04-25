@@ -45,36 +45,49 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     }
     loadUser()
 
-    // Polling để auto-refresh danh sách nợ mỗi 10 giây
-    const interval = setInterval(async () => {
-      setLoading(true)
-      const { data: updatedDebts } = await supabase
-        .from('debts')
-        .select('*')
-        .order('created_at', { ascending: false })
-      
-      if (updatedDebts) {
-        // Kiểm tra khoản nợ mới được gán cho current user
-        const newDebts = updatedDebts.filter(d => !previousDebtIds.has(d.id))
-        const assignedToMe = newDebts.filter(d => d.assigned_to === currentUserId && d.status === 'pending')
-        
-        if (assignedToMe.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
-          assignedToMe.forEach(debt => {
-            new Notification('Khoản nợ mới!', {
-              body: `${debt.debtor_name} nợ ${debt.amount.toLocaleString('vi-VN')}đ - ${debt.description}`,
-              icon: '/favicon.ico'
-            })
-          })
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('debts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'debts'
+        },
+        async (payload) => {
+          setLoading(true)
+          const { data: updatedDebts } = await supabase
+            .from('debts')
+            .select('*')
+            .order('created_at', { ascending: false })
+          
+          if (updatedDebts) {
+            // Check for new debts assigned to current user
+            if (payload.eventType === 'INSERT') {
+              const newDebt = payload.new as Debt
+              if (newDebt.assigned_to === currentUserId && newDebt.status === 'pending') {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('Khoản nợ mới!', {
+                    body: `${newDebt.debtor_name} nợ ${newDebt.amount.toLocaleString('vi-VN')}đ - ${newDebt.description}`,
+                    icon: '/favicon.ico'
+                  })
+                }
+              }
+            }
+            
+            setDebts(updatedDebts)
+            setPreviousDebtIds(new Set(updatedDebts.map(d => d.id)))
+          }
+          setLoading(false)
         }
-        
-        setDebts(updatedDebts)
-        setPreviousDebtIds(new Set(updatedDebts.map(d => d.id)))
-      }
-      setLoading(false)
-    }, 10000)
+      )
+      .subscribe()
 
-    return () => clearInterval(interval)
-  }, [supabase, currentUserId, previousDebtIds])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, currentUserId])
 
   const handleHide = async (id: string) => {
     if (!confirm('Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?')) {
