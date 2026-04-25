@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Debt Tracker - Quản lý Nợ
 
-## Getting Started
+Ứng dụng quản lý nợ cho nhóm bạn, giúp theo dõi các khoản nợ giữa các thành viên một cách dễ dàng.
 
-First, run the development server:
+## Tính năng
 
+### 🔐 Authentication
+- **Đăng ký tài khoản**: Tạo tài khoản với username và password
+- **Đăng nhập**: Đăng nhập với username/password
+- **Đăng xuất**: Xóa session và logout
+- **Profile**: Chỉnh sửa thông tin cá nhân (số điện thoại, avatar, đổi mật khẩu)
+
+### 💰 Quản lý Nợ
+- **Thêm khoản nợ mới**: Tạo khoản nợ với thông tin:
+  - Số tiền
+  - Nội dung
+  - Người nợ (gán cho thành viên khác)
+  - Ngày nợ
+- **Danh sách nợ**: Xem tất cả các khoản nợ với thông tin chi tiết
+- **Trạng thái nợ**:
+  - `Chờ xác nhận` - Khoản nợ mới được tạo
+  - `Đã xác nhận` - Người nợ đã xác nhận khoản nợ
+  - `Đã từ chối` - Người nợ đã từ chối khoản nợ
+- **Xác nhận/Từ chối**: Người được gán nợ có thể xác nhận hoặc từ chối khoản nợ
+- **Thanh toán**: Đánh dấu khoản nợ đã thanh toán (soft delete)
+
+### 🔔 Thông báo
+- **Notification**: Nhận thông báo khi có khoản nợ mới được gán cho bạn
+- **Auto-refresh**: Danh sách nợ tự động cập nhật mỗi 10 giây
+
+### 🎨 Giao diện
+- **Dark/Light mode**: Chuyển đổi chế độ tối/sáng
+- **Responsive**: Tương thích với mọi thiết bị
+- **Loading indicator**: Hiển thị trạng thái tải dữ liệu
+
+## Tech Stack
+
+- **Frontend**: Next.js 13 (App Router), React, TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Custom authentication (username/password) với localStorage
+- **Icons**: Lucide React
+
+## Cài đặt
+
+1. Clone repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/ducdz1m2/debt-tracker.git
+cd debt-tracker
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Cài đặt dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Tạo file `.env.local` và thêm các biến môi trường:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Chạy development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Mở [http://localhost:3000](http://localhost:3000) trên trình duyệt
 
-To learn more about Next.js, take a look at the following resources:
+## Database Schema
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Users Table
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  phone TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Debts Table
+```sql
+CREATE TABLE debts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  amount DECIMAL(10,2) NOT NULL,
+  description TEXT NOT NULL,
+  debt_date DATE NOT NULL,
+  debtor_name TEXT NOT NULL,
+  created_by TEXT,
+  assigned_to UUID,
+  status TEXT DEFAULT 'pending',
+  deleted_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Ứng dụng được deploy trên [Vercel](https://vercel.com).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT
