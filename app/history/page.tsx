@@ -1,18 +1,56 @@
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import AuthGuard from '../components/AuthGuard'
 import LogoutButton from '../components/LogoutButton'
-import NotificationPermissionButton from '../components/TestNotificationButton'
 import Link from 'next/link'
 
-export default async function HistoryPage() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+interface Debt {
+  id: string
+  amount: number
+  description: string
+  debt_date: string
+  debtor_name: string
+  created_at: string
+  created_by?: string
+  status?: string
+  deleted_at?: string
+}
 
-  const { data: debts } = await supabase
-    .from('debts')
-    .select('*')
-    .order('created_at', { ascending: false })
+export default function HistoryPage() {
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      const userId = localStorage.getItem('user_id')
+      const username = localStorage.getItem('username')
+
+      if (userId) {
+        setCurrentUserId(userId)
+        setCurrentUsername(username || null)
+
+        const { data } = await supabase
+          .from('debts')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (data) {
+          // Filter to show only user's debts
+          const filtered = data.filter(d => 
+            d.assigned_to === userId || d.created_by === username
+          )
+          setDebts(filtered)
+        }
+      }
+      setLoading(false)
+    }
+
+    loadData()
+  }, [])
 
   return (
     <AuthGuard>
@@ -27,20 +65,19 @@ export default async function HistoryPage() {
                 ← Quay lại trang chính
               </Link>
             </div>
-            <div className="flex gap-2">
-              <NotificationPermissionButton />
-              <LogoutButton />
-            </div>
+            <LogoutButton />
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">
-              Tất cả khoản nợ (kể cả đã ẩn)
+              Lịch sử khoản nợ của bạn
             </h2>
             
-            {debts && debts.length > 0 ? (
+            {loading ? (
+              <div className="text-center text-gray-500 py-8">Đang tải...</div>
+            ) : debts.length > 0 ? (
               <div className="space-y-3">
-                {debts.map((debt: any) => (
+                {debts.map((debt) => (
                   <div
                     key={debt.id}
                     className={`p-4 rounded-lg border ${
