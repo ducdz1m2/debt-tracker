@@ -28,6 +28,7 @@ interface CartItem {
   price: number
   image_url?: string
   isManual?: boolean
+  quantity: number
 }
 
 interface User {
@@ -74,7 +75,9 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
     const res = await fetch(`/api/friends/list?userId=${userId}`)
     const data = await res.json()
     if (data.friends) {
-      setUsers(data.friends)
+      // Deduplicate by ID
+      const uniqueUsers = Array.from(new Map((data.friends as User[]).map((u: User) => [u.id, u])).values())
+      setUsers(uniqueUsers)
     }
   }
 
@@ -124,7 +127,17 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
   }
 
   const handleAddToCart = (product: Product) => {
-    setCart([...cart, { ...product, id: `product-${product.id}` }])
+    // Check if product already exists in cart
+    const existingIndex = cart.findIndex(item => item.title === product.title && item.price === product.price)
+    if (existingIndex >= 0) {
+      // Increase quantity
+      const updatedCart = [...cart]
+      updatedCart[existingIndex].quantity += 1
+      setCart(updatedCart)
+    } else {
+      // Add new item with quantity 1
+      setCart([...cart, { ...product, id: `product-${product.id}`, quantity: 1 }])
+    }
   }
 
   const handleAddManualToCart = () => {
@@ -133,12 +146,23 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
       return
     }
 
-    setCart([...cart, {
-      id: `manual-${Date.now()}`,
-      title: manualTitle,
-      price: parseFloat(manualPrice),
-      isManual: true
-    }])
+    // Check if manual entry already exists in cart
+    const existingIndex = cart.findIndex(item => item.title === manualTitle && item.price === parseFloat(manualPrice))
+    if (existingIndex >= 0) {
+      // Increase quantity
+      const updatedCart = [...cart]
+      updatedCart[existingIndex].quantity += 1
+      setCart(updatedCart)
+    } else {
+      // Add new item with quantity 1
+      setCart([...cart, {
+        id: `manual-${Date.now()}`,
+        title: manualTitle,
+        price: parseFloat(manualPrice),
+        isManual: true,
+        quantity: 1
+      }])
+    }
 
     setManualTitle('')
     setManualPrice('')
@@ -146,7 +170,23 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
   }
 
   const handleRemoveFromCart = (index: number) => {
-    setCart(cart.filter((_, i) => i !== index))
+    const updatedCart = [...cart]
+    if (updatedCart[index].quantity > 1) {
+      updatedCart[index].quantity -= 1
+      setCart(updatedCart)
+    } else {
+      setCart(cart.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleUpdateQuantity = (index: number, delta: number) => {
+    const updatedCart = [...cart]
+    updatedCart[index].quantity += delta
+    if (updatedCart[index].quantity <= 0) {
+      setCart(cart.filter((_, i) => i !== index))
+    } else {
+      setCart(updatedCart)
+    }
   }
 
   const handleCheckout = () => {
@@ -165,9 +205,10 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
 
     setLoading(true)
 
-    const totalAmount = cart.reduce((sum, p) => sum + p.price, 0)
+    // Calculate total with quantities
+    const totalAmount = cart.reduce((sum, p) => sum + (p.price * p.quantity), 0)
     const splitAmount = totalAmount / selectedAssignees.length
-    const descriptions = cart.map(p => p.title).join(', ')
+    const descriptions = cart.map(p => `${p.title} x${p.quantity}`).join(', ')
 
     // Create debt records for each selected person
     const debtRecords = selectedAssignees.map(userId => {
@@ -280,10 +321,30 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                           ) : (
                             <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">📦</div>
                           )}
-                          <span className="text-sm">{item.title}</span>
+                          <div>
+                            <span className="text-sm">{item.title}</span>
+                            {item.quantity > 1 && (
+                              <span className="text-xs text-gray-500 ml-1">x{item.quantity}</span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">{item.price.toLocaleString('vi-VN')}đ</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleUpdateQuantity(index, -1)}
+                              className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                            >
+                              -
+                            </button>
+                            <span className="text-sm w-6 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => handleUpdateQuantity(index, 1)}
+                              className="w-6 h-6 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <span className="font-semibold text-blue-600">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
                           <button
                             onClick={() => handleRemoveFromCart(index)}
                             className="text-red-500 hover:text-red-700"
@@ -297,7 +358,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                   <div className="border-t pt-2 mb-4">
                     <div className="flex justify-between font-bold">
                       <span>Tổng:</span>
-                      <span className="text-blue-600">{cart.reduce((sum, p) => sum + p.price, 0).toLocaleString('vi-VN')}đ</span>
+                      <span className="text-blue-600">{cart.reduce((sum, p) => sum + (p.price * p.quantity), 0).toLocaleString('vi-VN')}đ</span>
                     </div>
                   </div>
                   <button
