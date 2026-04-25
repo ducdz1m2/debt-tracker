@@ -114,6 +114,10 @@ export default function ProfilePage() {
 
       if (res.ok) {
         setUser(data.user)
+        setFullName(data.user.full_name || '')
+        setPhone(data.user.phone || '')
+        setAddress(data.user.address || '')
+        setAvatarUrl(data.user.avatar_url || '')
         alert('Cập nhật thành công!')
         setCurrentPassword('')
         setNewPassword('')
