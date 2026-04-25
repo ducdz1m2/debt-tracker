@@ -122,6 +122,40 @@ export default function FriendsPage() {
     setLoading(false)
   }
 
+  const handleDeleteFriend = async (friendId: string) => {
+    const userId = localStorage.getItem('user_id')
+    if (!userId) return
+
+    if (!confirm('Bạn có chắc muốn xóa bạn bè? Lịch sử nợ sẽ vẫn được giữ lại.')) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/friends/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, friendId }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        alert('Đã xóa bạn bè!')
+        // Refresh friends list
+        const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
+        const friendsData = await friendsRes.json()
+        if (friendsData.friends) {
+          setFriends(friendsData.friends)
+        }
+      } else {
+        alert(data.error || 'Lỗi xóa bạn bè')
+      }
+    } catch (error) {
+      alert('Lỗi server')
+    }
+    setLoading(false)
+  }
+
   // Deduplicate arrays by ID
   const uniqueFriends = Array.from(new Map(friends.map(f => [f.id, f])).values())
   const uniquePending = Array.from(new Map(pendingRequests.map(p => [p.id, p])).values())
@@ -231,13 +265,22 @@ export default function FriendsPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Danh sách bạn bè</h2>
             <div className="space-y-3">
               {uniqueFriends.map(user => (
-                <div key={`friend-${user.id}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
-                  )}
-                  <span className="font-medium">{user.username}</span>
+                <div key={`friend-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                    )}
+                    <span className="font-medium">{user.username}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteFriend(user.id)}
+                    disabled={loading}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm disabled:bg-gray-400"
+                  >
+                    Xóa
+                  </button>
                 </div>
               ))}
               {uniqueFriends.length === 0 && (

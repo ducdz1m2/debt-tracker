@@ -90,6 +90,43 @@ export default function DebtList({ initialDebts }: DebtListProps) {
                 }
               }
             }
+
+            // Check for debt status changes
+            if (payload.eventType === 'UPDATE') {
+              const updatedDebt = payload.new as Debt
+              const oldDebt = payload.old as Debt
+              
+              // Notify creator when debt is confirmed/rejected
+              if (updatedDebt.created_by === currentUsername && oldDebt.status !== updatedDebt.status) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  let title = ''
+                  let body = ''
+                  if (updatedDebt.status === 'confirmed') {
+                    title = 'Khoản nợ đã được xác nhận!'
+                    body = `${updatedDebt.debtor_name} đã xác nhận khoản nợ ${updatedDebt.amount.toLocaleString('vi-VN')}đ`
+                  } else if (updatedDebt.status === 'rejected') {
+                    title = 'Khoản nợ đã bị từ chối!'
+                    body = `${updatedDebt.debtor_name} đã từ chối khoản nợ ${updatedDebt.amount.toLocaleString('vi-VN')}đ`
+                  }
+                  if (title) {
+                    new Notification(title, {
+                      body,
+                      icon: '/favicon.ico'
+                    })
+                  }
+                }
+              }
+
+              // Notify assignee when debt is marked as paid
+              if (updatedDebt.assigned_to === currentUserId && !oldDebt.deleted_at && updatedDebt.deleted_at) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  new Notification('Khoản nợ đã thanh toán!', {
+                    body: `Khoản nợ ${updatedDebt.amount.toLocaleString('vi-VN')}đ đã được đánh dấu thanh toán`,
+                    icon: '/favicon.ico'
+                  })
+                }
+              }
+            }
             
             // Filter debts to show only relevant ones
             const filteredDebts = updatedDebts.filter(d => 
