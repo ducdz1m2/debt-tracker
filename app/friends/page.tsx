@@ -15,6 +15,7 @@ interface User {
 export default function FriendsPage() {
   const [friends, setFriends] = useState<User[]>([])
   const [pendingRequests, setPendingRequests] = useState<User[]>([])
+  const [sentRequests, setSentRequests] = useState<User[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -31,11 +32,18 @@ export default function FriendsPage() {
         setFriends(friendsData.friends)
       }
 
-      // Load pending requests
+      // Load pending requests (received)
       const pendingRes = await fetch(`/api/friends/pending?userId=${userId}`)
       const pendingData = await pendingRes.json()
       if (pendingData.requests) {
         setPendingRequests(pendingData.requests)
+      }
+
+      // Load sent requests
+      const sentRes = await fetch(`/api/friends/sent?userId=${userId}`)
+      const sentData = await sentRes.json()
+      if (sentData.requests) {
+        setSentRequests(sentData.requests)
       }
 
       // Load all users for adding friends
@@ -64,11 +72,11 @@ export default function FriendsPage() {
       const data = await res.json()
       if (res.ok) {
         alert('Đã gửi lời mời kết bạn!')
-        // Refresh pending requests
-        const pendingRes = await fetch(`/api/friends/pending?userId=${userId}`)
-        const pendingData = await pendingRes.json()
-        if (pendingData.requests) {
-          setPendingRequests(pendingData.requests)
+        // Refresh sent requests
+        const sentRes = await fetch(`/api/friends/sent?userId=${userId}`)
+        const sentData = await sentRes.json()
+        if (sentData.requests) {
+          setSentRequests(sentData.requests)
         }
       } else {
         alert(data.error || 'Lỗi gửi lời mời')
@@ -116,6 +124,7 @@ export default function FriendsPage() {
 
   const friendIds = friends.map(f => f.id)
   const pendingIds = pendingRequests.map(p => p.id)
+  const sentIds = sentRequests.map(s => s.id)
 
   return (
     <AuthGuard>
@@ -165,25 +174,33 @@ export default function FriendsPage() {
             <div className="space-y-3">
               {allUsers
                 .filter(u => !friendIds.includes(u.id) && !pendingIds.includes(u.id))
-                .map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                .map(user => {
+                  const isSent = sentIds.includes(user.id)
+                  return (
+                    <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                        )}
+                        <span className="font-medium">{user.username}</span>
+                        {isSent && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Đã gửi lời mời</span>
+                        )}
+                      </div>
+                      {!isSent && (
+                        <button
+                          onClick={() => handleAddFriend(user.id)}
+                          disabled={loading}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400"
+                        >
+                          Kết bạn
+                        </button>
                       )}
-                      <span className="font-medium">{user.username}</span>
                     </div>
-                    <button
-                      onClick={() => handleAddFriend(user.id)}
-                      disabled={loading}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400"
-                    >
-                      Kết bạn
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               {allUsers.filter(u => !friendIds.includes(u.id) && !pendingIds.includes(u.id)).length === 0 && (
                 <p className="text-gray-500 text-center py-4">Không có người dùng nào để kết bạn</p>
               )}
