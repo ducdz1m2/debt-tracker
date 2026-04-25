@@ -27,7 +27,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 3
 
   // Filter initial debts based on current user
   useEffect(() => {
