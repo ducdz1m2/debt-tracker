@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         user_id,
         friend_id,
         status,
-        friend:users!friends_friend_id_fkey (id, username, avatar_url)
+        friend:users!friends_friend_id_fkey (id, username, full_name, avatar_url)
       `)
       .eq('user_id', userId)
       .eq('status', 'pending')
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const formattedRequests = requests?.map((f: any) => ({
       id: f.friend?.id,
       username: f.friend?.username,
+      full_name: f.friend?.full_name,
       avatar_url: f.friend?.avatar_url
     })) || []
 

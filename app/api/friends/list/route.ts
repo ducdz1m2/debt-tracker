@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
         user_id,
         friend_id,
         status,
-        users!friends_user_id_fkey (id, username, avatar_url),
-        friend:users!friends_friend_id_fkey (id, username, avatar_url)
+        users!friends_user_id_fkey (id, username, full_name, avatar_url),
+        friend:users!friends_friend_id_fkey (id, username, full_name, avatar_url)
       `)
       .or(`and(user_id.eq.${userId},status.eq.accepted),and(friend_id.eq.${userId},status.eq.accepted)`)
 
@@ -42,12 +42,14 @@ export async function GET(request: NextRequest) {
         return {
           id: f.friend?.id,
           username: f.friend?.username,
+          full_name: f.friend?.full_name,
           avatar_url: f.friend?.avatar_url
         }
       } else {
         return {
           id: f.users?.id,
           username: f.users?.username,
+          full_name: f.users?.full_name,
           avatar_url: f.users?.avatar_url
         }
       }
