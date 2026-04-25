@@ -1,25 +1,74 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+
+interface GroupMember {
+  id: string
+  user_id: string
+  name: string
+  email: string
+}
 
 export default function DebtForm() {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [debtDate, setDebtDate] = useState(new Date().toISOString().split('T')[0])
-  const [debtorName, setDebtorName] = useState('')
+  const [assignedTo, setAssignedTo] = useState('')
   const [loading, setLoading] = useState(false)
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([])
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUser(user)
+        
+        // Load group members
+        const { data: members } = await supabase
+          .from('group_members')
+          .select('*')
+        
+        if (members) {
+          setGroupMembers(members)
+          
+          // Add current user to group if not exists
+          const isMember = members.find(m => m.user_id === user.id)
+          if (!isMember) {
+            await supabase.from('group_members').insert({
+              user_id: user.id,
+              name: user.email?.split('@')[0] || 'Unknown',
+              email: user.email || ''
+            })
+            // Reload members
+            const { data: updatedMembers } = await supabase
+              .from('group_members')
+              .select('*')
+            if (updatedMembers) setGroupMembers(updatedMembers)
+          }
+        }
+      }
+    }
+
+    loadUserData()
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!amount || !description || !debtDate || !debtorName) {
+    if (!amount || !description || !debtDate || !assignedTo) {
       alert('Vui lòng điền đầy đủ thông tin')
       return
     }
 
+    if (!currentUser) {
+      alert('Bạn cần đăng nhập để thêm nợ')
+      return
+    }
+
     setLoading(true)
-    const supabase = createClient()
 
     const { error } = await supabase
       .from('debts')
@@ -27,7 +76,10 @@ export default function DebtForm() {
         amount: parseFloat(amount),
         description,
         debt_date: debtDate,
-        debtor_name: debtorName,
+        debtor_name: groupMembers.find(m => m.user_id === assignedTo)?.name || 'Unknown',
+        created_by: currentUser.email,
+        assigned_to: assignedTo,
+        status: 'pending',
       })
 
     if (error) {
@@ -36,9 +88,9 @@ export default function DebtForm() {
       // Reset form
       setAmount('')
       setDescription('')
-      setDebtorName('')
+      setAssignedTo('')
       setDebtDate(new Date().toISOString().split('T')[0])
-      alert('Đã thêm nợ thành công!')
+      alert('Đã thêm nợ thành công! Đang chờ người nợ xác nhận.')
       window.location.reload()
     }
 
@@ -79,16 +131,23 @@ export default function DebtForm() {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
-            Người nợ
+            Gán cho người nợ
           </label>
-          <input
-            type="text"
-            value={debtorName}
-            onChange={(e) => setDebtorName(e.target.value)}
+          <select
+            value={assignedTo}
+            onChange={(e) => setAssignedTo(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Tên người nợ"
             required
-          />
+          >
+            <option value="">Chọn người nợ...</option>
+            {groupMembers
+              .filter(m => m.user_id !== currentUser?.id)
+              .map(member => (
+                <option key={member.id} value={member.user_id}>
+                  {member.name} ({member.email})
+                </option>
+              ))}
+          </select>
         </div>
 
         <div>
