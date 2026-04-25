@@ -167,7 +167,7 @@ CREATE TABLE debts (
 
 ## Deploy
 
-Ứng dụng được deploy trên [Vercel](https://vercel.com).
+Ứng dụng được deploy trên [Vercel](https://debt-tracker-jade.vercel.app/).
 
 ## License
 
