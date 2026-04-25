@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabaseClient'
 import AuthGuard from '../components/AuthGuard'
 import LogoutButton from '../components/LogoutButton'
 import NotificationPermissionButton from '../components/TestNotificationButton'
@@ -23,10 +23,6 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  const supabase = createClient(supabaseUrl, supabaseKey)
 
   useEffect(() => {
     const loadUser = () => {

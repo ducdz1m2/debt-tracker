@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabaseClient'
 
 interface Debt {
   id: string
@@ -25,10 +25,6 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  const supabase = createClient(supabaseUrl, supabaseKey)
 
   useEffect(() => {
     const loadUser = () => {
