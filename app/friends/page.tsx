@@ -94,7 +94,7 @@ export default function FriendsPage() {
       const data = await res.json()
       if (res.ok) {
         alert('Đã chấp nhận lời mời kết bạn!')
-        // Refresh data
+        // Refresh all data
         const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
         const friendsData = await friendsRes.json()
         if (friendsData.friends) {

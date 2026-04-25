@@ -23,18 +23,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already friends
+    // Check if already friends or has pending request (both directions)
     const { data: existing } = await supabase
       .from('friends')
       .select('*')
       .or(`and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`)
-      .single()
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Đã có mối quan hệ bạn bè hoặc lời mời' },
-        { status: 400 }
-      )
+    if (existing && existing.length > 0) {
+      const relation = existing[0]
+      if (relation.status === 'accepted') {
+        return NextResponse.json(
+          { error: 'Đã là bạn bè' },
+          { status: 400 }
+        )
+      } else if (relation.status === 'pending') {
+        return NextResponse.json(
+          { error: 'Đã có lời mời kết bạn' },
+          { status: 400 }
+        )
+      }
     }
 
     const { data, error } = await supabase
