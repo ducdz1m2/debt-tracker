@@ -19,6 +19,7 @@ export default function FriendsPage() {
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -255,6 +256,13 @@ export default function FriendsPage() {
   const pendingIds = uniquePending.map(p => p.id)
   const sentIds = uniqueSent.map(s => s.id)
 
+  // Filter users based on search term
+  const filteredUsers = allUsers.filter(user => {
+    const matchesSearch = searchTerm === '' || user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const notInLists = !friendIds.includes(user.id) && !pendingIds.includes(user.id) && !sentIds.includes(user.id)
+    return matchesSearch && notInLists
+  })
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -300,30 +308,39 @@ export default function FriendsPage() {
           {/* Add Friends */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Thêm bạn mới</h2>
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm người dùng..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
             <div className="space-y-3">
-              {allUsers
-                .filter(u => !friendIds.includes(u.id) && !pendingIds.includes(u.id) && !sentIds.includes(u.id))
-                .map(user => (
-                  <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
-                      )}
-                      <span className="font-medium">{user.username}</span>
-                    </div>
-                    <button
-                      onClick={() => handleAddFriend(user.id)}
-                      disabled={loading}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400"
-                    >
-                      Kết bạn
-                    </button>
+              {filteredUsers.map(user => (
+                <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                    )}
+                    <span className="font-medium">{user.username}</span>
                   </div>
-                ))}
-              {allUsers.filter(u => !friendIds.includes(u.id) && !pendingIds.includes(u.id) && !sentIds.includes(u.id)).length === 0 && (
-                <p className="text-gray-500 text-center py-4">Không có người dùng nào để kết bạn</p>
+                  <button
+                    onClick={() => handleAddFriend(user.id)}
+                    disabled={loading}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400"
+                  >
+                    Kết bạn
+                  </button>
+                </div>
+              ))}
+              {filteredUsers.length === 0 && (
+                <p className="text-gray-500 text-center py-4">
+                  {searchTerm ? 'Không tìm thấy người dùng nào' : 'Không có người dùng nào để kết bạn'}
+                </p>
               )}
             </div>
           </div>
