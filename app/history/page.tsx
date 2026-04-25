@@ -25,6 +25,8 @@ export default function HistoryPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     const loadData = async () => {
@@ -69,7 +71,18 @@ export default function HistoryPage() {
       )
       setFilteredDebts(filtered)
     }
+    setCurrentPage(1) // Reset to page 1 when search changes
   }, [searchTerm, debts])
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredDebts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentDebts = filteredDebts.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
   return (
     <AuthGuard>
@@ -104,58 +117,93 @@ export default function HistoryPage() {
 
             {loading ? (
               <div className="text-center text-gray-500 py-8">Đang tải...</div>
-            ) : filteredDebts.length > 0 ? (
-              <div className="space-y-3">
-                {filteredDebts.map((debt) => (
-                  <div
-                    key={debt.id}
-                    className={`p-4 rounded-lg border ${
-                      debt.deleted_at ? 'bg-gray-100 border-gray-300 opacity-60' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="font-semibold text-lg text-blue-600">
-                            {debt.amount.toLocaleString('vi-VN')} đ
-                          </span>
-                          <span className="text-gray-500">|</span>
-                          <span className="text-gray-700">{debt.description}</span>
-                          {debt.status === 'pending' && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Chờ xác nhận</span>
-                          )}
-                          {debt.status === 'confirmed' && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Đã xác nhận</span>
-                          )}
-                          {debt.status === 'rejected' && (
-                            <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Đã từ chối</span>
-                          )}
-                          {debt.deleted_at && (
-                            <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">Đã thành toán</span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          <span className="font-medium">{debt.debtor_name}</span> -{' '}
-                          {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
-                          {debt.created_by && (
-                            <span className="ml-2 text-purple-600">
-                              (bởi {debt.created_by})
+            ) : currentDebts.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {currentDebts.map((debt) => (
+                    <div
+                      key={debt.id}
+                      className={`p-4 rounded-lg border ${
+                        debt.deleted_at ? 'bg-gray-100 border-gray-300 opacity-60' : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="font-semibold text-lg text-blue-600">
+                              {debt.amount.toLocaleString('vi-VN')} đ
                             </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          Ngày tạo: {new Date(debt.created_at).toLocaleString('vi-VN')}
-                          {debt.deleted_at && (
-                            <span className="ml-2">
-                              - thanh toán vào: {new Date(debt.deleted_at).toLocaleString('vi-VN')}
-                            </span>
-                          )}
+                            <span className="text-gray-500">|</span>
+                            <span className="text-gray-700">{debt.description}</span>
+                            {debt.status === 'pending' && (
+                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Chờ xác nhận</span>
+                            )}
+                            {debt.status === 'confirmed' && (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Đã xác nhận</span>
+                            )}
+                            {debt.status === 'rejected' && (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Đã từ chối</span>
+                            )}
+                            {debt.deleted_at && (
+                              <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">Đã thành toán</span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            <span className="font-medium">{debt.debtor_name}</span> -{' '}
+                            {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
+                            {debt.created_by && (
+                              <span className="ml-2 text-purple-600">
+                                (bởi {debt.created_by})
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            Ngày tạo: {new Date(debt.created_at).toLocaleString('vi-VN')}
+                            {debt.deleted_at && (
+                              <span className="ml-2">
+                                - thanh toán vào: {new Date(debt.deleted_at).toLocaleString('vi-VN')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-6">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ←
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-1 rounded ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      →
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             ) : searchTerm ? (
               <div className="text-center text-gray-500 py-8">
                 Không tìm thấy kết quả nào
