@@ -76,6 +76,17 @@ export default function StatsPage() {
     rejected: debts.filter(d => d.status === 'rejected').length,
   }
 
+  // Group by month
+  const byMonth = debts.reduce((acc: any, debt: any) => {
+    const month = new Date(debt.debt_date).toLocaleString('vi-VN', { month: 'short', year: 'numeric' })
+    if (!acc[month]) {
+      acc[month] = { amount: 0, count: 0 }
+    }
+    acc[month].amount += debt.amount || 0
+    acc[month].count += 1
+    return acc
+  }, {})
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -137,17 +148,29 @@ export default function StatsPage() {
                     <div className="space-y-3">
                       {Object.entries(byDebtor)
                         .sort((a, b) => (b[1] as any).amount - (a[1] as any).amount)
-                        .map(([name, data]: [string, any]) => (
-                          <div key={name} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <p className="font-medium text-gray-800">{name}</p>
-                              <p className="text-sm text-gray-500">{data.count} khoản nợ</p>
+                        .map(([name, data]: [string, any]) => {
+                          const maxAmount = Math.max(...Object.values(byDebtor).map((d: any) => d.amount))
+                          const percentage = (data.amount / maxAmount) * 100
+                          return (
+                            <div key={name}>
+                              <div className="flex justify-between items-center mb-1">
+                                <div>
+                                  <p className="font-medium text-gray-800">{name}</p>
+                                  <p className="text-sm text-gray-500">{data.count} khoản nợ</p>
+                                </div>
+                                <p className="font-semibold text-blue-600">
+                                  {data.amount.toLocaleString('vi-VN')} đ
+                                </p>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-blue-600 h-2 rounded-full transition-all"
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
                             </div>
-                            <p className="font-semibold text-blue-600">
-                              {data.amount.toLocaleString('vi-VN')} đ
-                            </p>
-                          </div>
-                        ))}
+                          )
+                        })}
                     </div>
                   ) : (
                     <p className="text-gray-500 text-center py-4">Chưa có dữ liệu</p>
@@ -189,6 +212,44 @@ export default function StatsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Monthly Trend */}
+              <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-700">
+                  Xu hướng theo tháng
+                </h2>
+                {Object.keys(byMonth).length > 0 ? (
+                  <div className="space-y-3">
+                    {Object.entries(byMonth)
+                      .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+                      .map(([month, data]: [string, any]) => {
+                        const maxAmount = Math.max(...Object.values(byMonth).map((d: any) => d.amount))
+                        const percentage = (data.amount / maxAmount) * 100
+                        return (
+                          <div key={month}>
+                            <div className="flex justify-between items-center mb-1">
+                              <div>
+                                <p className="font-medium text-gray-800">{month}</p>
+                                <p className="text-sm text-gray-500">{data.count} khoản nợ</p>
+                              </div>
+                              <p className="font-semibold text-purple-600">
+                                {data.amount.toLocaleString('vi-VN')} đ
+                              </p>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-purple-600 h-2 rounded-full transition-all"
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Chưa có dữ liệu</p>
+                )}
               </div>
             </>
           )}

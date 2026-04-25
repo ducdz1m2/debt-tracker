@@ -20,9 +20,11 @@ interface Debt {
 
 export default function HistoryPage() {
   const [debts, setDebts] = useState<Debt[]>([])
+  const [filteredDebts, setFilteredDebts] = useState<Debt[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     const loadData = async () => {
@@ -40,10 +42,11 @@ export default function HistoryPage() {
 
         if (data) {
           // Filter to show only user's debts
-          const filtered = data.filter(d => 
+          const filtered = data.filter(d =>
             d.assigned_to === userId || d.created_by === username
           )
           setDebts(filtered)
+          setFilteredDebts(filtered)
         }
       }
       setLoading(false)
@@ -51,6 +54,22 @@ export default function HistoryPage() {
 
     loadData()
   }, [])
+
+  // Filter debts based on search term
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredDebts(debts)
+    } else {
+      const term = searchTerm.toLowerCase()
+      const filtered = debts.filter(debt =>
+        debt.description.toLowerCase().includes(term) ||
+        debt.debtor_name.toLowerCase().includes(term) ||
+        debt.created_by?.toLowerCase().includes(term) ||
+        debt.status?.toLowerCase().includes(term)
+      )
+      setFilteredDebts(filtered)
+    }
+  }, [searchTerm, debts])
 
   return (
     <AuthGuard>
@@ -72,12 +91,22 @@ export default function HistoryPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-700">
               Lịch sử khoản nợ của bạn
             </h2>
-            
+
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm theo tên, nội dung, trạng thái..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
             {loading ? (
               <div className="text-center text-gray-500 py-8">Đang tải...</div>
-            ) : debts.length > 0 ? (
+            ) : filteredDebts.length > 0 ? (
               <div className="space-y-3">
-                {debts.map((debt) => (
+                {filteredDebts.map((debt) => (
                   <div
                     key={debt.id}
                     className={`p-4 rounded-lg border ${
@@ -126,6 +155,10 @@ export default function HistoryPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : searchTerm ? (
+              <div className="text-center text-gray-500 py-8">
+                Không tìm thấy kết quả nào
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">
