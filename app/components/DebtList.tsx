@@ -25,6 +25,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const loadUser = () => {
@@ -46,6 +47,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
 
     // Polling để auto-refresh danh sách nợ mỗi 10 giây
     const interval = setInterval(async () => {
+      setLoading(true)
       const { data: updatedDebts } = await supabase
         .from('debts')
         .select('*')
@@ -68,6 +70,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
         setDebts(updatedDebts)
         setPreviousDebtIds(new Set(updatedDebts.map(d => d.id)))
       }
+      setLoading(false)
     }, 10000)
 
     return () => clearInterval(interval)
@@ -130,6 +133,14 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       default:
         return null
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+        Đang tải...
+      </div>
+    )
   }
 
   if (debts.length === 0) {
