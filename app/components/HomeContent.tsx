@@ -326,7 +326,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column - Cart */}
-          <div>
+          <div className="md:sticky md:top-8 md:self-start">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-700">🛒 Giỏ nợ ({cart.length})</h2>
