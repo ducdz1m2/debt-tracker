@@ -14,7 +14,7 @@ export default function DebtForm() {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [debtDate, setDebtDate] = useState(new Date().toISOString().split('T')[0])
-  const [assignedTo, setAssignedTo] = useState('')
+  const [assignedTo, setAssignedTo] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -35,7 +35,7 @@ export default function DebtForm() {
         const data = await res.json()
         if (data.friends) {
           // Deduplicate by ID
-          const uniqueFriends = Array.from(new Map(data.friends.map((f: User) => [f.id, f])).values())
+          const uniqueFriends = Array.from(new Map((data.friends as User[]).map((f: User) => [f.id, f])).values())
           setUsers(uniqueFriends)
         }
       }
@@ -46,8 +46,8 @@ export default function DebtForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!amount || !description || !debtDate || !assignedTo) {
+
+    if (!amount || !description || !debtDate || assignedTo.length === 0) {
       alert('Vui lòng điền đầy đủ thông tin')
       return
     }
@@ -59,17 +59,26 @@ export default function DebtForm() {
 
     setLoading(true)
 
-    const { error } = await supabase
-      .from('debts')
-      .insert({
-        amount: parseFloat(amount),
+    const totalAmount = parseFloat(amount)
+    const splitAmount = totalAmount / assignedTo.length
+
+    // Create debt records for each selected person
+    const debtRecords = assignedTo.map(userId => {
+      const user = users.find(u => u.id === userId)
+      return {
+        amount: splitAmount,
         description,
         debt_date: debtDate,
-        debtor_name: users.find(u => u.id === assignedTo)?.username || 'Unknown',
+        debtor_name: user?.username || 'Unknown',
         created_by: currentUsername || 'Unknown',
-        assigned_to: assignedTo,
+        assigned_to: userId,
         status: 'pending',
-      })
+      }
+    })
+
+    const { error } = await supabase
+      .from('debts')
+      .insert(debtRecords)
 
     if (error) {
       alert('Lỗi khi thêm nợ: ' + error.message)
@@ -77,9 +86,12 @@ export default function DebtForm() {
       // Reset form
       setAmount('')
       setDescription('')
-      setAssignedTo('')
+      setAssignedTo([])
       setDebtDate(new Date().toISOString().split('T')[0])
-      alert('Đã thêm nợ thành công! Đang chờ người nợ xác nhận.')
+      const message = assignedTo.length === 1
+        ? 'Đã thêm nợ thành công! Đang chờ người nợ xác nhận.'
+        : `Đã thêm ${assignedTo.length} khoản nợ thành công! Mỗi người nợ ${splitAmount.toLocaleString('vi-VN')}đ.`
+      alert(message)
       window.location.reload()
     }
 
@@ -120,23 +132,35 @@ export default function DebtForm() {
 
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
-            Gán cho người nợ
+            Gán cho người nợ (có thể chọn nhiều)
           </label>
-          <select
-            value={assignedTo}
-            onChange={(e) => setAssignedTo(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">Chọn người nợ...</option>
+          <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
             {users
               .filter(u => u.id !== currentUserId)
               .map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.username}
-                </option>
+                <label key={user.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    value={user.id}
+                    checked={assignedTo.includes(user.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setAssignedTo([...assignedTo, user.id])
+                      } else {
+                        setAssignedTo(assignedTo.filter(id => id !== user.id))
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">{user.username}</span>
+                </label>
               ))}
-          </select>
+          </div>
+          {assignedTo.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Đã chọn {assignedTo.length} người. Mỗi người sẽ nợ {(parseFloat(amount || '0') / assignedTo.length).toLocaleString('vi-VN')}đ
+            </p>
+          )}
         </div>
 
         <div>
