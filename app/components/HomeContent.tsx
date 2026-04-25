@@ -19,6 +19,9 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
             📝 Ghi Nợ Sinh Hoạt
           </h1>
           <div className="flex gap-2">
+            <Link href="/friends" className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors" title="Bạn bè">
+              👥
+            </Link>
             <Link href="/history" className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition-colors" title="Lịch sử">
               📜
             </Link>

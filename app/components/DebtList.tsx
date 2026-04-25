@@ -27,6 +27,17 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
   const [loading, setLoading] = useState(false)
 
+  // Filter initial debts based on current user
+  useEffect(() => {
+    if (currentUserId && currentUsername) {
+      const filtered = initialDebts.filter(d => 
+        d.assigned_to === currentUserId || d.created_by === currentUsername
+      )
+      setDebts(filtered)
+      setPreviousDebtIds(new Set(filtered.map(d => d.id)))
+    }
+  }, [currentUserId, currentUsername, initialDebts])
+
   useEffect(() => {
     const loadUser = () => {
       // Get user_id from localStorage
@@ -76,8 +87,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
               }
             }
             
-            setDebts(updatedDebts)
-            setPreviousDebtIds(new Set(updatedDebts.map(d => d.id)))
+            // Filter debts to show only relevant ones
+            const filteredDebts = updatedDebts.filter(d => 
+              d.assigned_to === currentUserId || d.created_by === currentUsername
+            )
+            setDebts(filteredDebts)
+            setPreviousDebtIds(new Set(filteredDebts.map(d => d.id)))
           }
           setLoading(false)
         }
@@ -87,7 +102,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase, currentUserId])
+  }, [supabase, currentUserId, currentUsername])
 
   const handleHide = async (id: string) => {
     if (!confirm('Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?')) {

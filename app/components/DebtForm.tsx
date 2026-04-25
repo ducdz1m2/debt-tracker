@@ -21,7 +21,7 @@ export default function DebtForm() {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadUserData = () => {
+    const loadUserData = async () => {
       // Get user_id from localStorage
       const userId = localStorage.getItem('user_id')
       const username = localStorage.getItem('username')
@@ -29,21 +29,18 @@ export default function DebtForm() {
       if (userId) {
         setCurrentUserId(userId)
         setCurrentUsername(username || null)
-      }
 
-      // Load all users
-      supabase
-        .from('users')
-        .select('*')
-        .then(({ data }) => {
-          if (data) {
-            setUsers(data)
-          }
-        })
+        // Load friends only
+        const res = await fetch(`/api/friends/list?userId=${userId}`)
+        const data = await res.json()
+        if (data.friends) {
+          setUsers(data.friends)
+        }
+      }
     }
 
     loadUserData()
-  }, [supabase])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
