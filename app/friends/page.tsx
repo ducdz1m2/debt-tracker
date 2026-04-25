@@ -23,6 +23,7 @@ export default function FriendsPage() {
   useEffect(() => {
     const loadData = async () => {
       const userId = localStorage.getItem('user_id')
+      const username = localStorage.getItem('username')
       if (!userId) return
 
       // Load friends
@@ -51,6 +52,78 @@ export default function FriendsPage() {
       const { data: users } = await supabase.from('users').select('*')
       if (users) {
         setAllUsers(users.filter((u: User) => u.id !== userId))
+      }
+
+      // Subscribe to realtime changes for friends table
+      const channel = supabase
+        .channel('friends-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'friends'
+          },
+          async (payload) => {
+            // Refresh data on any change
+            const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
+            const friendsData = await friendsRes.json()
+            if (friendsData.friends) {
+              setFriends(friendsData.friends)
+            }
+            const pendingRes = await fetch(`/api/friends/pending?userId=${userId}`)
+            const pendingData = await pendingRes.json()
+            if (pendingData.requests) {
+              setPendingRequests(pendingData.requests)
+            }
+            const sentRes = await fetch(`/api/friends/sent?userId=${userId}`)
+            const sentData = await sentRes.json()
+            if (sentData.requests) {
+              setSentRequests(sentData.requests)
+            }
+
+            // Show notifications for important events
+            if (payload.eventType === 'INSERT') {
+              const newFriend = payload.new as any
+              // Notify when someone sends a friend request to current user
+              if (newFriend.friend_id === userId && newFriend.status === 'pending') {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  // Get sender's username
+                  const { data: sender } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', newFriend.user_id)
+                    .single()
+                  new Notification('Lời mời kết bạn mới!', {
+                    body: `${sender?.username || 'Một người dùng'} muốn kết bạn với bạn`,
+                    icon: '/favicon.ico'
+                  })
+                }
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedFriend = payload.new as any
+              const oldFriend = payload.old as any
+              // Notify when someone accepts friend request
+              if (updatedFriend.user_id === userId && oldFriend.status === 'pending' && updatedFriend.status === 'accepted') {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  const { data: accepter } = await supabase
+                    .from('users')
+                    .select('username')
+                    .eq('id', updatedFriend.friend_id)
+                    .single()
+                  new Notification('Đã kết bạn thành công!', {
+                    body: `${accepter?.username || 'Một người dùng'} đã chấp nhận lời mời kết bạn`,
+                    icon: '/favicon.ico'
+                  })
+                }
+              }
+            }
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
       }
     }
 
