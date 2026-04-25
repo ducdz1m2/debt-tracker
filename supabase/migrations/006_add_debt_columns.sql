@@ -1,0 +1,6 @@
+-- Add missing columns to debts table
+ALTER TABLE debts 
+ADD COLUMN IF NOT EXISTS created_by TEXT,
+ADD COLUMN IF NOT EXISTS assigned_to UUID REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending',
+ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
