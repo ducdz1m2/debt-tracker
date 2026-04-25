@@ -11,13 +11,17 @@ import Link from 'next/link'
 interface User {
   id: string
   username: string
+  full_name?: string
   phone?: string
+  address?: string
   avatar_url?: string
 }
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
+  const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -39,7 +43,9 @@ export default function ProfilePage() {
           .then(({ data }) => {
             if (data) {
               setUser(data)
+              setFullName(data.full_name || '')
               setPhone(data.phone || '')
+              setAddress(data.address || '')
               setAvatarUrl(data.avatar_url || '')
             }
           })
@@ -95,7 +101,9 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
+          full_name: fullName,
           phone,
+          address,
           avatar_url: avatarUrl,
           currentPassword,
           newPassword,
@@ -158,8 +166,10 @@ export default function ProfilePage() {
                     </div>
                   )}
                   <div>
-                    <p className="text-lg font-semibold">{user.username}</p>
+                    <p className="text-lg font-semibold">{user.full_name || user.username}</p>
+                    <p className="text-gray-500">@{user.username}</p>
                     <p className="text-gray-500">{user.phone || 'Chưa cập nhật số điện thoại'}</p>
+                    {user.address && <p className="text-gray-500">{user.address}</p>}
                   </div>
                 </div>
               </div>
@@ -180,6 +190,19 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Họ tên
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập họ tên"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
                   Số điện thoại
                 </label>
                 <input
@@ -188,6 +211,19 @@ export default function ProfilePage() {
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nhập số điện thoại"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Địa chỉ
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Nhập địa chỉ (tùy chọn)"
                 />
               </div>
 

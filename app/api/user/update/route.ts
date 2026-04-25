@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, phone, avatar_url, currentPassword, newPassword } = await request.json()
+    const { userId, full_name, phone, address, avatar_url, currentPassword, newPassword } = await request.json()
 
     if (!userId) {
       return NextResponse.json(
@@ -33,9 +33,19 @@ export async function POST(request: NextRequest) {
 
     const updateData: any = {}
 
+    // Update full_name
+    if (full_name !== undefined) {
+      updateData.full_name = full_name
+    }
+
     // Update phone
     if (phone !== undefined) {
       updateData.phone = phone
+    }
+
+    // Update address
+    if (address !== undefined) {
+      updateData.address = address
     }
 
     // Update avatar_url
@@ -69,7 +79,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .update(updateData)
       .eq('id', userId)
-      .select('id, username, phone, avatar_url')
+      .select('id, username, full_name, phone, address, avatar_url')
       .single()
 
     if (updateError) {

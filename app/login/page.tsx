@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
@@ -20,7 +21,7 @@ export default function LoginPage() {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ username, password, fullName }),
         })
         const data = await res.json()
         
@@ -63,6 +64,22 @@ export default function LoginPage() {
         </h1>
         
         <form onSubmit={handleAuth} className="space-y-4">
+          {isSignUp && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Họ tên
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Nguyễn Văn A"
+                required
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
               Username

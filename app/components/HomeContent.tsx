@@ -35,6 +35,7 @@ interface CartItem {
 interface User {
   id: string
   username: string
+  full_name?: string
   avatar_url?: string
 }
 
@@ -494,11 +495,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-8 h-8 rounded-full object-cover" />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">👤</div>
                     )}
-                    <span>{user.username}</span>
+                    <span>{user.full_name || user.username}</span>
                   </label>
                 ))}
               </div>

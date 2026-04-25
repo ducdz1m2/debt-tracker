@@ -9,6 +9,7 @@ import Link from 'next/link'
 interface User {
   id: string
   username: string
+  full_name?: string
   avatar_url?: string
 }
 
@@ -258,7 +259,9 @@ export default function FriendsPage() {
 
   // Filter users based on search term
   const filteredUsers = allUsers.filter(user => {
-    const matchesSearch = searchTerm === '' || user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = searchTerm === '' || 
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.full_name && user.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
     const notInLists = !friendIds.includes(user.id) && !pendingIds.includes(user.id) && !sentIds.includes(user.id)
     return matchesSearch && notInLists
   })
@@ -286,11 +289,11 @@ export default function FriendsPage() {
                   <div key={`pending-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                       )}
-                      <span className="font-medium">{user.username}</span>
+                      <span className="font-medium">{user.full_name || user.username}</span>
                     </div>
                     <button
                       onClick={() => handleAcceptFriend(user.id)}
@@ -322,11 +325,11 @@ export default function FriendsPage() {
                 <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                     )}
-                    <span className="font-medium">{user.username}</span>
+                    <span className="font-medium">{user.full_name || user.username}</span>
                   </div>
                   <button
                     onClick={() => handleAddFriend(user.id)}
@@ -354,11 +357,11 @@ export default function FriendsPage() {
                   <div key={`sent-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">👤</div>
                       )}
-                      <span className="font-medium">{user.username}</span>
+                      <span className="font-medium">{user.full_name || user.username}</span>
                       <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Đang chờ phản hồi</span>
                     </div>
                   </div>
@@ -375,11 +378,11 @@ export default function FriendsPage() {
                 <div key={`friend-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
                     )}
-                    <span className="font-medium">{user.username}</span>
+                    <span className="font-medium">{user.full_name || user.username}</span>
                   </div>
                   <button
                     onClick={() => handleDeleteFriend(user.id)}

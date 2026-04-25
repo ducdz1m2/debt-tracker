@@ -8,11 +8,11 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json()
+    const { username, password, fullName } = await request.json()
 
-    if (!username || !password) {
+    if (!username || !password || !fullName) {
       return NextResponse.json(
-        { error: 'Username và password là bắt buộc' },
+        { error: 'Username, họ tên và password là bắt buộc' },
         { status: 400 }
       )
     }
@@ -47,8 +47,9 @@ export async function POST(request: NextRequest) {
       .insert({
         username,
         password_hash: passwordHash,
+        full_name: fullName,
       })
-      .select('id, username, phone, avatar_url')
+      .select('id, username, full_name, phone, avatar_url')
       .single()
 
     if (error) {
