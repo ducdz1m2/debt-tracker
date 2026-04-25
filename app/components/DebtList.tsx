@@ -26,6 +26,8 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
   const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
 
   // Filter initial debts based on current user
   useEffect(() => {
@@ -39,6 +41,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       )
       setDebts(uniqueDebts)
       setPreviousDebtIds(new Set(uniqueDebts.map(d => d.id)))
+      setCurrentPage(1) // Reset to page 1 when debts change
     }
   }, [currentUserId, currentUsername, initialDebts])
 
@@ -208,6 +211,16 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     }
   }
 
+  // Calculate pagination
+  const totalPages = Math.ceil(debts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentDebts = debts.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
@@ -225,61 +238,96 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {debts.map((debt) => (
-        <div
-          key={debt.id}
-          className="bg-white rounded-lg shadow-md p-4"
-        >
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="font-semibold text-lg text-blue-600">
-                  {debt.amount.toLocaleString('vi-VN')} đ
-                </span>
-                <span className="text-gray-500">|</span>
-                <span className="text-gray-700">{debt.description}</span>
-                {getStatusBadge(debt.status)}
-              </div>
-              <div className="text-sm text-gray-500 mt-1">
-                <span className="font-medium">{debt.debtor_name}</span> -{' '}
-                {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
-                {debt.created_by && (
-                  <span className="ml-2 text-purple-600">
-                    (bởi {debt.created_by})
+    <div>
+      <div className="space-y-3">
+        {currentDebts.map((debt) => (
+          <div
+            key={debt.id}
+            className="bg-white rounded-lg shadow-md p-4"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold text-lg text-blue-600">
+                    {debt.amount.toLocaleString('vi-VN')} đ
                   </span>
-                )}
+                  <span className="text-gray-500">|</span>
+                  <span className="text-gray-700">{debt.description}</span>
+                  {getStatusBadge(debt.status)}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  <span className="font-medium">{debt.debtor_name}</span> -{' '}
+                  {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
+                  {debt.created_by && (
+                    <span className="ml-2 text-purple-600">
+                      (bởi {debt.created_by})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+            
+            {debt.status === 'pending' && debt.assigned_to === currentUserId && (
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => handleConfirm(debt.id)}
+                  className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm"
+                >
+                  Xác nhận
+                </button>
+                <button
+                  onClick={() => handleReject(debt.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                >
+                  Từ chối
+                </button>
+              </div>
+            )}
+            
+            {debt.created_by === currentUsername && (
+              <button
+                onClick={() => handleHide(debt.id)}
+                className="mt-3 bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+              >
+                Thanh toán
+              </button>
+            )}
           </div>
-          
-          {debt.status === 'pending' && debt.assigned_to === currentUserId && (
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => handleConfirm(debt.id)}
-                className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm"
-              >
-                Xác nhận
-              </button>
-              <button
-                onClick={() => handleReject(debt.id)}
-                className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
-              >
-                Từ chối
-              </button>
-            </div>
-          )}
-          
-          {debt.created_by === currentUsername && (
+        ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ←
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
-              onClick={() => handleHide(debt.id)}
-              className="mt-3 bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 rounded ${
+                currentPage === page
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300'
+              }`}
             >
-              Thanh toán
+              {page}
             </button>
-          )}
+          ))}
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            →
+          </button>
         </div>
-      ))}
+      )}
     </div>
   )
 }
