@@ -1,45 +1,55 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    if (isSignUp) {
-      // Sign up
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-      if (error) {
-        alert('Lỗi đăng ký: ' + error.message)
+    try {
+      if (isSignUp) {
+        // Sign up
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        })
+        const data = await res.json()
+        
+        if (res.ok) {
+          alert('Đăng ký thành công!')
+          setIsSignUp(false)
+        } else {
+          alert(data.error || 'Lỗi đăng ký')
+        }
       } else {
-        alert('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.')
-        setIsSignUp(false)
+        // Sign in
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        })
+        const data = await res.json()
+        
+        if (res.ok) {
+          // Store user data in localStorage
+          localStorage.setItem('user_id', data.user.id)
+          localStorage.setItem('username', data.user.username)
+          router.push('/')
+        } else {
+          alert(data.error || 'Lỗi đăng nhập')
+        }
       }
-    } else {
-      // Sign in
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) {
-        alert('Lỗi đăng nhập: ' + error.message)
-      } else {
-        router.push('/')
-        router.refresh()
-      }
+    } catch (error) {
+      alert('Lỗi server')
     }
 
     setLoading(false)
@@ -55,14 +65,14 @@ export default function LoginPage() {
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
-              Email
+              Username
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="email@example.com"
+              placeholder="username"
               required
             />
           </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 
 interface Debt {
   id: string
@@ -22,18 +22,28 @@ interface DebtListProps {
 
 export default function DebtList({ initialDebts }: DebtListProps) {
   const [debts, setDebts] = useState<Debt[]>(initialDebts)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
-  const supabase = createClient()
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  const supabase = createClient(supabaseUrl, supabaseKey)
 
   useEffect(() => {
-    const loadUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setCurrentUser(user)
+    const loadUser = () => {
+      // Get user_id from localStorage
+      const userId = localStorage.getItem('user_id')
+      const username = localStorage.getItem('username')
+
+      if (userId) {
+        setCurrentUserId(userId)
+        setCurrentUsername(username || null)
+      }
       
       // Request notification permission
       if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission()
+        Notification.requestPermission()
       }
     }
     loadUser()
@@ -48,7 +58,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       if (updatedDebts) {
         // Kiểm tra khoản nợ mới được gán cho current user
         const newDebts = updatedDebts.filter(d => !previousDebtIds.has(d.id))
-        const assignedToMe = newDebts.filter(d => d.assigned_to === currentUser?.id && d.status === 'pending')
+        const assignedToMe = newDebts.filter(d => d.assigned_to === currentUserId && d.status === 'pending')
         
         if (assignedToMe.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
           assignedToMe.forEach(debt => {
@@ -65,7 +75,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [supabase, currentUser, previousDebtIds])
+  }, [supabase, currentUserId, previousDebtIds])
 
   const handleHide = async (id: string) => {
     if (!confirm('Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?')) {
@@ -163,7 +173,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
             </div>
           </div>
           
-          {debt.status === 'pending' && debt.assigned_to === currentUser?.id && (
+          {debt.status === 'pending' && debt.assigned_to === currentUserId && (
             <div className="mt-3 flex gap-2">
               <button
                 onClick={() => handleConfirm(debt.id)}
@@ -180,7 +190,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
             </div>
           )}
           
-          {debt.created_by === currentUser?.email && (
+          {debt.created_by === currentUsername && (
             <button
               onClick={() => handleHide(debt.id)}
               className="mt-3 bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 
-interface GroupMember {
+interface User {
   id: string
-  user_id: string
-  name: string
-  email: string
+  username: string
+  phone?: string
+  avatar_url?: string
 }
 
 export default function DebtForm() {
@@ -16,40 +16,34 @@ export default function DebtForm() {
   const [debtDate, setDebtDate] = useState(new Date().toISOString().split('T')[0])
   const [assignedTo, setAssignedTo] = useState('')
   const [loading, setLoading] = useState(false)
-  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([])
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const supabase = createClient()
+  const [users, setUsers] = useState<User[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null)
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  const supabase = createClient(supabaseUrl, supabaseKey)
 
   useEffect(() => {
-    const loadUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUser(user)
-        
-        // Load group members
-        const { data: members } = await supabase
-          .from('group_members')
-          .select('*')
-        
-        if (members) {
-          setGroupMembers(members)
-          
-          // Add current user to group if not exists
-          const isMember = members.find(m => m.user_id === user.id)
-          if (!isMember) {
-            await supabase.from('group_members').insert({
-              user_id: user.id,
-              name: user.email?.split('@')[0] || 'Unknown',
-              email: user.email || ''
-            })
-            // Reload members
-            const { data: updatedMembers } = await supabase
-              .from('group_members')
-              .select('*')
-            if (updatedMembers) setGroupMembers(updatedMembers)
-          }
-        }
+    const loadUserData = () => {
+      // Get user_id from localStorage
+      const userId = localStorage.getItem('user_id')
+      const username = localStorage.getItem('username')
+
+      if (userId) {
+        setCurrentUserId(userId)
+        setCurrentUsername(username || null)
       }
+
+      // Load all users
+      supabase
+        .from('users')
+        .select('*')
+        .then(({ data }) => {
+          if (data) {
+            setUsers(data)
+          }
+        })
     }
 
     loadUserData()
@@ -63,7 +57,7 @@ export default function DebtForm() {
       return
     }
 
-    if (!currentUser) {
+    if (!currentUserId) {
       alert('Bạn cần đăng nhập để thêm nợ')
       return
     }
@@ -76,8 +70,8 @@ export default function DebtForm() {
         amount: parseFloat(amount),
         description,
         debt_date: debtDate,
-        debtor_name: groupMembers.find(m => m.user_id === assignedTo)?.name || 'Unknown',
-        created_by: currentUser.email,
+        debtor_name: users.find(u => u.id === assignedTo)?.username || 'Unknown',
+        created_by: currentUsername || 'Unknown',
         assigned_to: assignedTo,
         status: 'pending',
       })
@@ -140,11 +134,11 @@ export default function DebtForm() {
             required
           >
             <option value="">Chọn người nợ...</option>
-            {groupMembers
-              .filter(m => m.user_id !== currentUser?.id)
-              .map(member => (
-                <option key={member.id} value={member.user_id}>
-                  {member.name} ({member.email})
+            {users
+              .filter(u => u.id !== currentUserId)
+              .map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.username}
                 </option>
               ))}
           </select>
