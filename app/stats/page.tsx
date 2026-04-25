@@ -36,7 +36,6 @@ export default function StatsPage() {
         const { data } = await supabase
           .from('debts')
           .select('*')
-          .is('deleted_at', null)
 
         if (data) {
           // Filter to show only user's debts
@@ -54,9 +53,10 @@ export default function StatsPage() {
 
   // Calculate statistics
   const totalAmount = debts.reduce((sum, debt) => sum + (debt.amount || 0), 0)
-  const pendingAmount = debts.filter(d => d.status === 'pending').reduce((sum, debt) => sum + (debt.amount || 0), 0)
-  const confirmedAmount = debts.filter(d => d.status === 'confirmed').reduce((sum, debt) => sum + (debt.amount || 0), 0)
-  const rejectedAmount = debts.filter(d => d.status === 'rejected').reduce((sum, debt) => sum + (debt.amount || 0), 0)
+  const pendingAmount = debts.filter(d => d.status === 'pending' && !d.deleted_at).reduce((sum, debt) => sum + (debt.amount || 0), 0)
+  const confirmedAmount = debts.filter(d => d.status === 'confirmed' && !d.deleted_at).reduce((sum, debt) => sum + (debt.amount || 0), 0)
+  const rejectedAmount = debts.filter(d => d.status === 'rejected' && !d.deleted_at).reduce((sum, debt) => sum + (debt.amount || 0), 0)
+  const paidAmount = debts.filter(d => d.deleted_at).reduce((sum, debt) => sum + (debt.amount || 0), 0)
 
   // Group by debtor
   const byDebtor = debts.reduce((acc: any, debt: any) => {
@@ -71,9 +71,10 @@ export default function StatsPage() {
 
   // Group by status
   const byStatus = {
-    pending: debts.filter(d => d.status === 'pending').length,
-    confirmed: debts.filter(d => d.status === 'confirmed').length,
-    rejected: debts.filter(d => d.status === 'rejected').length,
+    pending: debts.filter(d => d.status === 'pending' && !d.deleted_at).length,
+    confirmed: debts.filter(d => d.status === 'confirmed' && !d.deleted_at).length,
+    rejected: debts.filter(d => d.status === 'rejected' && !d.deleted_at).length,
+    paid: debts.filter(d => d.deleted_at).length,
   }
 
   // Group by month
@@ -108,7 +109,7 @@ export default function StatsPage() {
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="text-gray-500 text-sm mb-2">Tổng số tiền</h3>
                   <p className="text-2xl font-bold text-blue-600">
@@ -135,6 +136,13 @@ export default function StatsPage() {
                     {rejectedAmount.toLocaleString('vi-VN')} đ
                   </p>
                   <p className="text-xs text-gray-400">{byStatus.rejected} khoản</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-gray-500 text-sm mb-2">Đã thanh toán</h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {paidAmount.toLocaleString('vi-VN')} đ
+                  </p>
+                  <p className="text-xs text-gray-400">{byStatus.paid} khoản</p>
                 </div>
               </div>
 
@@ -208,6 +216,15 @@ export default function StatsPage() {
                       </div>
                       <p className="font-semibold text-red-600">
                         {rejectedAmount.toLocaleString('vi-VN')} đ
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-800">Đã thanh toán</p>
+                        <p className="text-sm text-gray-500">{byStatus.paid} khoản</p>
+                      </div>
+                      <p className="font-semibold text-purple-600">
+                        {paidAmount.toLocaleString('vi-VN')} đ
                       </p>
                     </div>
                   </div>
