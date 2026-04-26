@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import Swal from 'sweetalert2'
 
 interface Debt {
   id: string
@@ -192,7 +193,18 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   }, [supabase, currentUserId, currentUsername])
 
   const handleHide = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?')) {
+    const result = await Swal.fire({
+      title: 'Xác nhận',
+      text: 'Bạn có chắc muốn đánh dấu khoản nợ này là đã thanh toán?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Có',
+      cancelButtonText: 'Hủy'
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
@@ -202,22 +214,40 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       .eq('id', id)
 
     if (error) {
-      alert('Lỗi khi đánh dấu: ' + error.message)
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi khi đánh dấu: ' + error.message
+      })
     } else {
       setDebts(debts.filter((debt) => debt.id !== id))
-      alert('Đã đánh dấu thành thanh toán!')
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Đã đánh dấu thành thanh toán!',
+        timer: 2000,
+        showConfirmButton: false
+      })
     }
   }
 
   const handlePartialPayment = async () => {
     if (!selectedDebt || !paymentAmount) {
-      alert('Vui lòng nhập số tiền thanh toán')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Vui lòng nhập số tiền thanh toán'
+      })
       return
     }
 
     const amount = parseFloat(paymentAmount)
     if (isNaN(amount) || amount <= 0) {
-      alert('Số tiền phải lớn hơn 0')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Số tiền phải lớn hơn 0'
+      })
       return
     }
 
@@ -237,7 +267,13 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       const data = await res.json()
 
       if (res.ok) {
-        alert(data.isFullyPaid ? 'Đã thanh toán hết!' : 'Thanh toán thành công!')
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: data.isFullyPaid ? 'Đã thanh toán hết!' : 'Thanh toán thành công!',
+          timer: 2000,
+          showConfirmButton: false
+        })
         setShowPaymentModal(false)
         setPaymentAmount('')
         setSelectedDebt(null)
@@ -249,10 +285,18 @@ export default function DebtList({ initialDebts }: DebtListProps) {
           loadPaymentsForDebts(debts)
         }
       } else {
-        alert(data.error || 'Lỗi thanh toán')
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: data.error || 'Lỗi thanh toán'
+        })
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
 
     setPaymentLoading(false)
@@ -273,10 +317,20 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       .eq('id', id)
 
     if (error) {
-      alert('Lỗi khi xác nhận: ' + error.message)
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi khi xác nhận: ' + error.message
+      })
     } else {
       setDebts(debts.map(d => d.id === id ? { ...d, status: 'confirmed' } : d))
-      alert('Đã xác nhận khoản nợ!')
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Đã xác nhận khoản nợ!',
+        timer: 2000,
+        showConfirmButton: false
+      })
     }
   }
 
@@ -287,10 +341,20 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       .eq('id', id)
 
     if (error) {
-      alert('Lỗi khi từ chối: ' + error.message)
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi khi từ chối: ' + error.message
+      })
     } else {
       setDebts(debts.map(d => d.id === id ? { ...d, status: 'rejected' } : d))
-      alert('Đã từ chối khoản nợ!')
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: 'Đã từ chối khoản nợ!',
+        timer: 2000,
+        showConfirmButton: false
+      })
     }
   }
 

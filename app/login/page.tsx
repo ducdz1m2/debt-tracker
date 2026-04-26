@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Swal from 'sweetalert2'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -26,10 +27,20 @@ export default function LoginPage() {
         const data = await res.json()
         
         if (res.ok) {
-          alert('Đăng ký thành công!')
+          Swal.fire({
+            icon: 'success',
+            title: 'Thành công',
+            text: 'Đăng ký thành công!',
+            timer: 2000,
+            showConfirmButton: false
+          })
           setIsSignUp(false)
         } else {
-          alert(data.error || 'Lỗi đăng ký')
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: data.error || 'Lỗi đăng ký'
+          })
         }
       } else {
         // Sign in
@@ -46,11 +57,19 @@ export default function LoginPage() {
           localStorage.setItem('username', data.user.username)
           router.push('/')
         } else {
-          alert(data.error || 'Lỗi đăng nhập')
+          Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: data.error || 'Lỗi đăng nhập'
+          })
         }
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
 
     setLoading(false)

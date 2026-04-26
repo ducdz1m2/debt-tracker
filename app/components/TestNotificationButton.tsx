@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Swal from 'sweetalert2'
 
 export default function NotificationPermissionButton() {
   const [permission, setPermission] = useState<NotificationPermission>('default')
@@ -13,7 +14,11 @@ export default function NotificationPermissionButton() {
 
   const handleClick = () => {
     if (!('Notification' in window)) {
-      alert('Browser không hỗ trợ thông báo')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Browser không hỗ trợ thông báo'
+      })
       return
     }
 
@@ -25,7 +30,11 @@ export default function NotificationPermissionButton() {
         }
       })
     } else if (permission === 'denied') {
-      alert('Thông báo đã bị chặn. Vào browser settings để bật lại.')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Thông báo đã bị chặn. Vào browser settings để bật lại.'
+      })
     }
   }
 

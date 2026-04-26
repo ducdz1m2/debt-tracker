@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import Swal from 'sweetalert2'
 
 interface ProductFormProps {
   onCreateProduct: (product: { title: string; price: string; imageUrl: string; purchaseLocation: string }) => void
@@ -33,7 +34,11 @@ export default function ProductForm({ onCreateProduct }: ProductFormProps) {
         .upload(filePath, file)
 
       if (uploadError) {
-        alert('Lỗi upload ảnh: ' + uploadError.message)
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Lỗi upload ảnh: ' + uploadError.message
+        })
         return
       }
 
@@ -44,7 +49,11 @@ export default function ProductForm({ onCreateProduct }: ProductFormProps) {
       setImageUrl(publicUrl)
       setImageFile(null)
     } catch (error) {
-      alert('Lỗi upload ảnh')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi upload ảnh'
+      })
     } finally {
       setUploading(false)
     }
@@ -54,7 +63,11 @@ export default function ProductForm({ onCreateProduct }: ProductFormProps) {
     e.preventDefault()
 
     if (!title || !price) {
-      alert('Vui lòng điền đầy đủ thông tin')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Vui lòng điền đầy đủ thông tin'
+      })
       return
     }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import Swal from 'sweetalert2'
 
 interface User {
   id: string
@@ -48,12 +49,20 @@ export default function DebtForm() {
     e.preventDefault()
 
     if (!amount || !description || !debtDate || assignedTo.length === 0) {
-      alert('Vui lòng điền đầy đủ thông tin')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Vui lòng điền đầy đủ thông tin'
+      })
       return
     }
 
     if (!currentUserId) {
-      alert('Bạn cần đăng nhập để thêm nợ')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Bạn cần đăng nhập để thêm nợ'
+      })
       return
     }
 
@@ -81,7 +90,11 @@ export default function DebtForm() {
       .insert(debtRecords)
 
     if (error) {
-      alert('Lỗi khi thêm nợ: ' + error.message)
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi khi thêm nợ: ' + error.message
+      })
     } else {
       // Reset form
       setAmount('')
@@ -91,8 +104,15 @@ export default function DebtForm() {
       const message = assignedTo.length === 1
         ? 'Đã thêm nợ thành công! Đang chờ người nợ xác nhận.'
         : `Đã thêm ${assignedTo.length} khoản nợ thành công! Mỗi người nợ ${splitAmount.toLocaleString('vi-VN')}đ.`
-      alert(message)
-      window.location.reload()
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: message,
+        timer: 2000,
+        showConfirmButton: false
+      }).then(() => {
+        window.location.reload()
+      })
     }
 
     setLoading(false)

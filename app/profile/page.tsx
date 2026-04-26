@@ -7,6 +7,7 @@ import AuthGuard from '../components/AuthGuard'
 import LogoutButton from '../components/LogoutButton'
 import NotificationPermissionButton from '../components/TestNotificationButton'
 import Link from 'next/link'
+import Swal from 'sweetalert2'
 
 interface User {
   id: string
@@ -72,7 +73,11 @@ export default function ProfilePage() {
         .upload(filePath, file)
 
       if (uploadError) {
-        alert('Lỗi upload ảnh: ' + uploadError.message)
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Lỗi upload ảnh: ' + uploadError.message
+        })
         return
       }
 
@@ -83,7 +88,11 @@ export default function ProfilePage() {
       setAvatarUrl(publicUrl)
       setAvatarFile(null)
     } catch (error) {
-      alert('Lỗi upload ảnh')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi upload ảnh'
+      })
     } finally {
       setUploading(false)
     }
@@ -118,14 +127,28 @@ export default function ProfilePage() {
         setPhone(data.user.phone || '')
         setAddress(data.user.address || '')
         setAvatarUrl(data.user.avatar_url || '')
-        alert('Cập nhật thành công!')
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: 'Cập nhật thành công!',
+          timer: 2000,
+          showConfirmButton: false
+        })
         setCurrentPassword('')
         setNewPassword('')
       } else {
-        alert(data.error || 'Lỗi cập nhật')
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: data.error || 'Lỗi cập nhật'
+        })
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
 
     setLoading(false)
