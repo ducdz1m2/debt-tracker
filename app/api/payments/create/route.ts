@@ -79,8 +79,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (paymentError) {
+      console.error('Payment creation error:', paymentError)
       return NextResponse.json(
-        { error: 'Lỗi khi tạo thanh toán' },
+        { error: 'Lỗi khi tạo thanh toán: ' + paymentError.message },
         { status: 500 }
       )
     }
