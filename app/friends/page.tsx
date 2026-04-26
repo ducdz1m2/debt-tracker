@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import AuthGuard from '../components/AuthGuard'
 import LogoutButton from '../components/LogoutButton'
 import Link from 'next/link'
+import Swal from 'sweetalert2'
 
 interface User {
   id: string
@@ -163,7 +164,13 @@ export default function FriendsPage() {
 
       const data = await res.json()
       if (res.ok) {
-        alert('Đã gửi lời mời kết bạn!')
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: 'Đã gửi lời mời kết bạn!',
+          timer: 2000,
+          showConfirmButton: false
+        })
         // Refresh sent requests
         const sentRes = await fetch(`/api/friends/sent?userId=${userId}`)
         const sentData = await sentRes.json()
@@ -171,10 +178,18 @@ export default function FriendsPage() {
           setSentRequests(sentData.requests)
         }
       } else {
-        alert(data.error || 'Lỗi gửi lời mời')
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: data.error || 'Lỗi gửi lời mời'
+        })
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
     setLoading(false)
   }
@@ -193,7 +208,13 @@ export default function FriendsPage() {
 
       const data = await res.json()
       if (res.ok) {
-        alert('Đã chấp nhận lời mời kết bạn!')
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: 'Đã chấp nhận lời mời kết bạn!',
+          timer: 2000,
+          showConfirmButton: false
+        })
         // Refresh all data
         const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
         const friendsData = await friendsRes.json()
@@ -206,10 +227,18 @@ export default function FriendsPage() {
           setPendingRequests(pendingData.requests)
         }
       } else {
-        alert(data.error || 'Lỗi chấp nhận lời mời')
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: data.error || 'Lỗi chấp nhận lời mời'
+        })
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
     setLoading(false)
   }
@@ -218,7 +247,18 @@ export default function FriendsPage() {
     const userId = localStorage.getItem('user_id')
     if (!userId) return
 
-    if (!confirm('Bạn có chắc muốn xóa bạn bè? Lịch sử nợ sẽ vẫn được giữ lại.')) {
+    const result = await Swal.fire({
+      title: 'Xác nhận',
+      text: 'Bạn có chắc muốn xóa bạn bè? Lịch sử nợ sẽ vẫn được giữ lại.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy'
+    })
+
+    if (!result.isConfirmed) {
       return
     }
 
@@ -232,7 +272,13 @@ export default function FriendsPage() {
 
       const data = await res.json()
       if (res.ok) {
-        alert('Đã xóa bạn bè!')
+        Swal.fire({
+          icon: 'success',
+          title: 'Thành công',
+          text: 'Đã xóa bạn bè!',
+          timer: 2000,
+          showConfirmButton: false
+        })
         // Refresh friends list
         const friendsRes = await fetch(`/api/friends/list?userId=${userId}`)
         const friendsData = await friendsRes.json()
@@ -240,10 +286,18 @@ export default function FriendsPage() {
           setFriends(friendsData.friends)
         }
       } else {
-        alert(data.error || 'Lỗi xóa bạn bè')
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: data.error || 'Lỗi xóa bạn bè'
+        })
       }
     } catch (error) {
-      alert('Lỗi server')
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi server'
+      })
     }
     setLoading(false)
   }
