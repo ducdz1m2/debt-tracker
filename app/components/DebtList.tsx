@@ -408,7 +408,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
                 </div>
               )}
               
-              {debt.created_by === currentUsername && (
+              {debt.created_by === currentUsername && debt.status === 'confirmed' && (
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => handleOpenPaymentModal(debt)}
@@ -422,6 +422,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
                   >
                     Thanh toán hết
                   </button>
+                </div>
+              )}
+              
+              {debt.created_by === currentUsername && debt.status === 'pending' && (
+                <div className="mt-3 text-sm text-gray-500">
+                  Chờ đối phương xác nhận để thanh toán
                 </div>
               )}
             </div>
