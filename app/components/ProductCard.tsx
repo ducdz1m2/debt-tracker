@@ -21,21 +21,21 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, isCreator, onDelete, onAddToCart, onEdit }: ProductCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 flex gap-4">
+    <div className="bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row gap-4">
       {product.image_url ? (
-        <img src={product.image_url} alt={product.title} className="w-24 h-24 object-cover rounded-lg" />
+        <img src={product.image_url} alt={product.title} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
       ) : (
-        <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+        <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
           📦
         </div>
       )}
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <h3 className="font-semibold text-gray-800">{product.title}</h3>
         <p className="text-lg font-bold text-blue-600">{product.price.toLocaleString('vi-VN')} đ</p>
         {product.purchase_location && (
           <p className="text-sm text-gray-500">📍 {product.purchase_location}</p>
         )}
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-wrap gap-2 mt-2">
           <button
             onClick={() => onAddToCart(product)}
             className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
