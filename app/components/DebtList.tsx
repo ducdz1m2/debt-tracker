@@ -473,20 +473,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
               )}
               
               {debt.created_by === currentUsername && debt.status === 'confirmed' && (
-                <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={() => handleOpenPaymentModal(debt)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                  >
-                    Thanh toán một phần
-                  </button>
-                  <button
-                    onClick={() => handleHide(debt.id)}
-                    className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                  >
-                    Thanh toán hết
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleOpenPaymentModal(debt)}
+                  className="mt-3 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                >
+                  Thanh toán
+                </button>
               )}
               
               {debt.created_by === currentUsername && debt.status === 'pending' && (
@@ -503,7 +495,7 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       {showPaymentModal && selectedDebt && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Thanh toán một phần</h3>
+            <h3 className="text-xl font-semibold mb-4">Thanh toán</h3>
             <div className="mb-4">
               <p className="text-gray-600 mb-2">
                 Khoản nợ: {selectedDebt.description}
