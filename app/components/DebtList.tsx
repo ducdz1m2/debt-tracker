@@ -14,6 +14,15 @@ interface Debt {
   status?: string
   assigned_to?: string
   deleted_at?: string
+  payments?: Payment[]
+}
+
+interface Payment {
+  id: string
+  debt_id: string
+  amount: number
+  payment_date: string
+  created_by: string
 }
 
 interface DebtListProps {
@@ -27,6 +36,10 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   const [previousDebtIds, setPreviousDebtIds] = useState<Set<string>>(new Set(initialDebts.map(d => d.id)))
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
   const itemsPerPage = 3
 
   // Filter initial debts based on current user
@@ -42,8 +55,34 @@ export default function DebtList({ initialDebts }: DebtListProps) {
       setDebts(uniqueDebts)
       setPreviousDebtIds(new Set(uniqueDebts.map(d => d.id)))
       setCurrentPage(1) // Reset to page 1 when debts change
+      
+      // Load payments for each debt
+      loadPaymentsForDebts(uniqueDebts)
     }
   }, [currentUserId, currentUsername, initialDebts])
+
+  const loadPaymentsForDebts = async (debtList: Debt[]) => {
+    const debtIds = debtList.map(d => d.id)
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('*')
+      .in('debt_id', debtIds)
+    
+    if (payments) {
+      const paymentsByDebt: Record<string, Payment[]> = {}
+      payments.forEach(p => {
+        if (!paymentsByDebt[p.debt_id]) {
+          paymentsByDebt[p.debt_id] = []
+        }
+        paymentsByDebt[p.debt_id].push(p)
+      })
+      
+      setDebts(debtList.map(d => ({
+        ...d,
+        payments: paymentsByDebt[d.id] || []
+      })))
+    }
+  }
 
   useEffect(() => {
     const loadUser = () => {
@@ -170,6 +209,63 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     }
   }
 
+  const handlePartialPayment = async () => {
+    if (!selectedDebt || !paymentAmount) {
+      alert('Vui lòng nhập số tiền thanh toán')
+      return
+    }
+
+    const amount = parseFloat(paymentAmount)
+    if (isNaN(amount) || amount <= 0) {
+      alert('Số tiền phải lớn hơn 0')
+      return
+    }
+
+    setPaymentLoading(true)
+
+    try {
+      const res = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          debtId: selectedDebt.id,
+          amount,
+          createdBy: currentUsername,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert(data.isFullyPaid ? 'Đã thanh toán hết!' : 'Thanh toán thành công!')
+        setShowPaymentModal(false)
+        setPaymentAmount('')
+        setSelectedDebt(null)
+        
+        // Reload payments for this debt
+        if (data.isFullyPaid) {
+          setDebts(debts.filter(d => d.id !== selectedDebt.id))
+        } else {
+          loadPaymentsForDebts(debts)
+        }
+      } else {
+        alert(data.error || 'Lỗi thanh toán')
+      }
+    } catch (error) {
+      alert('Lỗi server')
+    }
+
+    setPaymentLoading(false)
+  }
+
+  const handleOpenPaymentModal = (debt: Debt) => {
+    setSelectedDebt(debt)
+    const totalPaid = debt.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+    const remaining = debt.amount - totalPaid
+    setPaymentAmount(remaining.toString())
+    setShowPaymentModal(true)
+  }
+
   const handleConfirm = async (id: string) => {
     const { error } = await supabase
       .from('debts')
@@ -211,6 +307,12 @@ export default function DebtList({ initialDebts }: DebtListProps) {
     }
   }
 
+  const getPaymentProgress = (debt: Debt) => {
+    const totalPaid = debt.payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+    const percentage = (totalPaid / debt.amount) * 100
+    return { totalPaid, percentage }
+  }
+
   // Calculate pagination
   const totalPages = Math.ceil(debts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -240,61 +342,150 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   return (
     <div>
       <div className="space-y-3">
-        {currentDebts.map((debt) => (
-          <div
-            key={debt.id}
-            className="bg-white rounded-lg shadow-md p-4"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-semibold text-lg text-blue-600">
-                    {debt.amount.toLocaleString('vi-VN')} đ
-                  </span>
-                  <span className="text-gray-500">|</span>
-                  <span className="text-gray-700">{debt.description}</span>
-                  {getStatusBadge(debt.status)}
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  <span className="font-medium">{debt.debtor_name}</span> -{' '}
-                  {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
-                  {debt.created_by && (
-                    <span className="ml-2 text-purple-600">
-                      (bởi {debt.created_by})
+        {currentDebts.map((debt) => {
+          const { totalPaid, percentage } = getPaymentProgress(debt)
+          const hasPayments = debt.payments && debt.payments.length > 0
+          
+          return (
+            <div
+              key={debt.id}
+              className="bg-white rounded-lg shadow-md p-4"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-semibold text-lg text-blue-600">
+                      {debt.amount.toLocaleString('vi-VN')} đ
                     </span>
+                    <span className="text-gray-500">|</span>
+                    <span className="text-gray-700">{debt.description}</span>
+                    {getStatusBadge(debt.status)}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    <span className="font-medium">{debt.debtor_name}</span> -{' '}
+                    {new Date(debt.debt_date).toLocaleDateString('vi-VN')}
+                    {debt.created_by && (
+                      <span className="ml-2 text-purple-600">
+                        (bởi {debt.created_by})
+                      </span>
+                    )}
+                  </div>
+                  
+                  {hasPayments && (
+                    <div className="mt-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Đã trả: {totalPaid.toLocaleString('vi-VN')}đ</span>
+                        <span className="text-gray-600">{percentage.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full transition-all"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Còn lại: {(debt.amount - totalPaid).toLocaleString('vi-VN')}đ
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
+              
+              {debt.status === 'pending' && debt.assigned_to === currentUserId && (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => handleConfirm(debt.id)}
+                    className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm"
+                  >
+                    Xác nhận
+                  </button>
+                  <button
+                    onClick={() => handleReject(debt.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                  >
+                    Từ chối
+                  </button>
+                </div>
+              )}
+              
+              {debt.created_by === currentUsername && (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => handleOpenPaymentModal(debt)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    Thanh toán một phần
+                  </button>
+                  <button
+                    onClick={() => handleHide(debt.id)}
+                    className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Thanh toán hết
+                  </button>
+                </div>
+              )}
             </div>
-            
-            {debt.status === 'pending' && debt.assigned_to === currentUserId && (
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => handleConfirm(debt.id)}
-                  className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm"
-                >
-                  Xác nhận
-                </button>
-                <button
-                  onClick={() => handleReject(debt.id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
-                >
-                  Từ chối
-                </button>
-              </div>
-            )}
-            
-            {debt.created_by === currentUsername && (
-              <button
-                onClick={() => handleHide(debt.id)}
-                className="mt-3 bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm"
-              >
-                Thanh toán
-              </button>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedDebt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold mb-4">Thanh toán một phần</h3>
+            <div className="mb-4">
+              <p className="text-gray-600 mb-2">
+                Khoản nợ: {selectedDebt.description}
+              </p>
+              <p className="text-gray-600 mb-2">
+                Tổng tiền: {selectedDebt.amount.toLocaleString('vi-VN')}đ
+              </p>
+              {selectedDebt.payments && selectedDebt.payments.length > 0 && (
+                <p className="text-gray-600 mb-2">
+                  Đã trả: {selectedDebt.payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString('vi-VN')}đ
+                </p>
+              )}
+              <p className="text-gray-600 mb-4">
+                Còn lại: {(selectedDebt.amount - (selectedDebt.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)).toLocaleString('vi-VN')}đ
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Số tiền thanh toán
+              </label>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Nhập số tiền"
+                min="1"
+                step="0.01"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePartialPayment}
+                disabled={paymentLoading}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+              >
+                {paymentLoading ? 'Đang xử lý...' : 'Thanh toán'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false)
+                  setSelectedDebt(null)
+                  setPaymentAmount('')
+                }}
+                className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
