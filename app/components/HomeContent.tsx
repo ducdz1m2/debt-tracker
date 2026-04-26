@@ -45,7 +45,15 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
   const [showProductForm, setShowProductForm] = useState(false)
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [showAssigneeModal, setShowAssigneeModal] = useState(false)
+  const [showEditProductModal, setShowEditProductModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editPrice, setEditPrice] = useState('')
+  const [editImageUrl, setEditImageUrl] = useState('')
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editPurchaseLocation, setEditPurchaseLocation] = useState('')
+  const [editUploading, setEditUploading] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [users, setUsers] = useState<User[]>([])
@@ -161,7 +169,69 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
     }
   }
 
-  const handleUpdateProduct = async (product: { id: string; title: string; price: string; imageUrl: string; purchaseLocation: string }) => {
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product)
+    setEditTitle(product.title)
+    setEditPrice(product.price.toString())
+    setEditImageUrl(product.image_url || '')
+    setEditPurchaseLocation(product.purchase_location || '')
+    setEditImageFile(null)
+    setShowEditProductModal(true)
+  }
+
+  const handleEditImageUpload = async (file: File) => {
+    if (!file) return
+
+    setEditUploading(true)
+    try {
+      const userId = localStorage.getItem('user_id')
+      if (!userId) return
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${userId}-${Date.now()}.${fileExt}`
+      const filePath = `products/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi',
+          text: 'Lỗi upload ảnh: ' + uploadError.message
+        })
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath)
+
+      setEditImageUrl(publicUrl)
+      setEditImageFile(null)
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi upload ảnh'
+      })
+    } finally {
+      setEditUploading(false)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingProduct || !editTitle || !editPrice) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cảnh báo',
+        text: 'Vui lòng điền đầy đủ thông tin'
+      })
+      return
+    }
+
+    setEditLoading(true)
     const userId = localStorage.getItem('user_id')
     if (!userId) return
 
@@ -170,11 +240,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId,
-        productId: product.id,
-        title: product.title,
-        price: product.price,
-        imageUrl: product.imageUrl,
-        purchaseLocation: product.purchaseLocation,
+        productId: editingProduct.id,
+        title: editTitle,
+        price: editPrice,
+        imageUrl: editImageUrl,
+        purchaseLocation: editPurchaseLocation,
       }),
     })
 
@@ -186,7 +256,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
         timer: 1500,
         showConfirmButton: false
       })
-      setShowProductForm(false)
+      setShowEditProductModal(false)
       setEditingProduct(null)
       loadProducts(userId)
     } else {
@@ -196,16 +266,17 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
         text: 'Lỗi cập nhật sản phẩm'
       })
     }
-  }
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product)
-    setShowProductForm(true)
+    setEditLoading(false)
   }
 
   const handleCancelEdit = () => {
+    setShowEditProductModal(false)
     setEditingProduct(null)
-    setShowProductForm(false)
+    setEditTitle('')
+    setEditPrice('')
+    setEditImageUrl('')
+    setEditPurchaseLocation('')
+    setEditImageFile(null)
   }
 
   const handleAddToCart = (product: Product) => {
@@ -485,13 +556,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-700">📦 Sản phẩm</h2>
               <button
-                onClick={() => {
-                  if (showProductForm && editingProduct) {
-                    handleCancelEdit()
-                  } else {
-                    setShowProductForm(!showProductForm)
-                  }
-                }}
+                onClick={() => setShowProductForm(!showProductForm)}
                 className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm w-full sm:w-auto"
               >
                 {showProductForm ? 'Đóng' : '+ Thêm sản phẩm'}
@@ -499,12 +564,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
             </div>
 
             {showProductForm && (
-              <ProductForm
-                onCreateProduct={handleCreateProduct}
-                onUpdateProduct={handleUpdateProduct}
-                editingProduct={editingProduct}
-                onCancelEdit={handleCancelEdit}
-              />
+              <ProductForm onCreateProduct={handleCreateProduct} />
             )}
 
             <div className="space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
@@ -576,6 +636,92 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                   className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
                 >
                   {loading ? 'Đang tạo...' : 'Xác nhận'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Product Edit Modal */}
+        {showEditProductModal && editingProduct && (
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-md w-full mx-4">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700">Sửa sản phẩm</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Tên sản phẩm *
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Giá tiền (VNĐ) *
+                  </label>
+                  <input
+                    type="number"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Ảnh sản phẩm
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setEditImageFile(file)
+                          handleEditImageUpload(file)
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={editUploading}
+                    />
+                    {editUploading && <span className="text-sm text-gray-500">Đang upload...</span>}
+                  </div>
+                  {editImageUrl && (
+                    <div className="mt-2">
+                      <img src={editImageUrl} alt="Preview" className="w-24 h-24 object-cover rounded-lg" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Chỗ mua
+                  </label>
+                  <input
+                    type="text"
+                    value={editPurchaseLocation}
+                    onChange={(e) => setEditPurchaseLocation(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={editLoading}
+                  className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 disabled:bg-gray-400"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={editLoading || editUploading}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+                >
+                  {editLoading ? 'Đang lưu...' : 'Lưu'}
                 </button>
               </div>
             </div>
