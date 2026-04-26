@@ -340,22 +340,22 @@ export default function FriendsPage() {
               <h2 className="text-xl font-semibold mb-4 text-gray-700">Lời mời kết bạn</h2>
               <div className="space-y-3">
                 {uniquePending.map(user => (
-                  <div key={`pending-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div key={`pending-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
+                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">👤</div>
                       )}
-                      <div>
-                        <span className="font-medium">{user.full_name || user.username}</span>
-                        <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium truncate block">{user.full_name || user.username}</span>
+                        <span className="text-gray-500 text-sm ml-0 truncate block">@{user.username}</span>
                       </div>
                     </div>
                     <button
                       onClick={() => handleAcceptFriend(user.id)}
                       disabled={loading}
-                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400"
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400 flex-shrink-0"
                     >
                       Chấp nhận
                     </button>
@@ -379,22 +379,22 @@ export default function FriendsPage() {
             </div>
             <div className="space-y-3">
               {filteredUsers.map(user => (
-                <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div key={`add-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">👤</div>
                     )}
-                    <div>
-                      <span className="font-medium">{user.full_name || user.username}</span>
-                      <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium truncate block">{user.full_name || user.username}</span>
+                      <span className="text-gray-500 text-sm ml-0 truncate block">@{user.username}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => handleAddFriend(user.id)}
                     disabled={loading}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-400 flex-shrink-0"
                   >
                     Kết bạn
                   </button>
@@ -414,18 +414,18 @@ export default function FriendsPage() {
               <h2 className="text-xl font-semibold mb-4 text-gray-700">Lời mời đã gửi</h2>
               <div className="space-y-3">
                 {uniqueSent.map(user => (
-                  <div key={`sent-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div key={`sent-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
+                        <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">👤</div>
+                        <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">👤</div>
                       )}
-                      <div>
-                        <span className="font-medium">{user.full_name || user.username}</span>
-                        <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium truncate block">{user.full_name || user.username}</span>
+                        <span className="text-gray-500 text-sm ml-0 truncate block">@{user.username}</span>
                       </div>
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Đang chờ phản hồi</span>
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs flex-shrink-0">Đang chờ phản hồi</span>
                     </div>
                   </div>
                 ))}
@@ -438,22 +438,22 @@ export default function FriendsPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Danh sách bạn bè</h2>
             <div className="space-y-3">
               {uniqueFriends.map(user => (
-                <div key={`friend-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                <div key={`friend-${user.id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">👤</div>
                     )}
-                    <div>
-                      <span className="font-medium">{user.full_name || user.username}</span>
-                      <span className="text-gray-500 text-sm ml-2">@{user.username}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium truncate block">{user.full_name || user.username}</span>
+                      <span className="text-gray-500 text-sm ml-0 truncate block">@{user.username}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDeleteFriend(user.id)}
                     disabled={loading}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm disabled:bg-gray-400"
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm disabled:bg-gray-400 flex-shrink-0"
                   >
                     Xóa
                   </button>
