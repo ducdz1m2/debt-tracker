@@ -301,23 +301,23 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 px-2 sm:py-8 sm:px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-8 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
             📝 Ghi Nợ Sinh Hoạt
           </h1>
-          <div className="flex gap-2">
-            <Link href="/friends" className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors" title="Bạn bè">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/friends" className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm" title="Bạn bè">
               👥
             </Link>
-            <Link href="/history" className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition-colors" title="Lịch sử">
+            <Link href="/history" className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition-colors text-sm" title="Lịch sử">
               📜
             </Link>
-            <Link href="/stats" className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors" title="Thống kê">
+            <Link href="/stats" className="bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors text-sm" title="Thống kê">
               📊
             </Link>
-            <Link href="/profile" className="bg-pink-500 text-white px-3 py-2 rounded-lg hover:bg-pink-600 transition-colors" title="Profile">
+            <Link href="/profile" className="bg-pink-500 text-white px-3 py-2 rounded-lg hover:bg-pink-600 transition-colors text-sm" title="Profile">
               👤
             </Link>
             <NotificationPermissionButton />
@@ -325,15 +325,15 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {/* Left Column - Cart */}
-          <div className="md:sticky md:top-8 md:self-start">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-700">🛒 Giỏ nợ ({cart.length})</h2>
+          <div className="lg:sticky lg:top-8 lg:self-start order-2 lg:order-1">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-700">🛒 Giỏ nợ ({cart.length})</h2>
                 <button
                   onClick={() => setShowManualEntry(!showManualEntry)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm w-full sm:w-auto"
                 >
                   {showManualEntry ? 'Đóng' : '+ Nhập thủ công'}
                 </button>
@@ -370,21 +370,21 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                 <>
                   <div className="space-y-2 mb-4">
                     {cart.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <div className="flex items-center gap-2">
+                      <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-50 rounded gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           {item.image_url ? (
-                            <img src={item.image_url} alt={item.title} className="w-10 h-10 object-cover rounded" />
+                            <img src={item.image_url} alt={item.title} className="w-10 h-10 object-cover rounded flex-shrink-0" />
                           ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">📦</div>
+                            <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">📦</div>
                           )}
-                          <div>
-                            <span className="text-sm">{item.title}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm truncate block">{item.title}</span>
                             {item.quantity > 1 && (
                               <span className="text-xs text-gray-500 ml-1">x{item.quantity}</span>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleUpdateQuantity(index, -1)}
@@ -400,10 +400,10 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                               +
                             </button>
                           </div>
-                          <span className="font-semibold text-blue-600">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
+                          <span className="font-semibold text-blue-600 text-sm">{(item.price * item.quantity).toLocaleString('vi-VN')}đ</span>
                           <button
                             onClick={() => handleRemoveFromCart(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 flex-shrink-0"
                           >
                             ✕
                           </button>
@@ -433,12 +433,12 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
           </div>
 
           {/* Right Column - Products */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-700">📦 Sản phẩm</h2>
+          <div className="order-1 lg:order-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-700">📦 Sản phẩm</h2>
               <button
                 onClick={() => setShowProductForm(!showProductForm)}
-                className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm w-full sm:w-auto"
               >
                 {showProductForm ? 'Đóng' : '+ Thêm sản phẩm'}
               </button>
@@ -448,7 +448,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
               <ProductForm onCreateProduct={handleCreateProduct} />
             )}
 
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            <div className="space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
               {products.length > 0 ? (
                 products.map((product) => (
                   <ProductCard
@@ -460,7 +460,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                   />
                 ))
               ) : (
-                <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-center text-gray-500">
                   Chưa có sản phẩm nào
                 </div>
               )}
@@ -468,16 +468,16 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
           </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Danh sách nợ</h2>
+        <div className="mt-6 sm:mt-8">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700">Danh sách nợ</h2>
           <DebtList initialDebts={initialDebts} />
         </div>
 
         {/* Assignee Selection Modal */}
         {showAssigneeModal && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-md p-6 max-w-md w-full mx-4">
-              <h2 className="text-xl font-semibold mb-4 text-gray-700">Chọn người nợ</h2>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 max-w-md w-full mx-4">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-700">Chọn người nợ</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
                 {users.map(user => (
                   <label key={user.id} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
@@ -495,11 +495,11 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-8 h-8 rounded-full object-cover" />
+                      <img src={user.avatar_url} alt={user.full_name || user.username} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">👤</div>
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm flex-shrink-0">👤</div>
                     )}
-                    <span>{user.full_name || user.username}</span>
+                    <span className="truncate">{user.full_name || user.username}</span>
                   </label>
                 ))}
               </div>
