@@ -46,21 +46,35 @@ export default function DebtList({ initialDebts }: DebtListProps) {
   // Filter initial debts based on current user
   useEffect(() => {
     if (currentUserId && currentUsername) {
-      const filtered = initialDebts.filter(d => 
-        d.assigned_to === currentUserId || d.created_by === currentUsername
-      )
+      loadDebts()
+    }
+  }, [currentUserId, currentUsername])
+
+  const loadDebts = async () => {
+    if (!currentUserId || !currentUsername) return
+
+    setLoading(true)
+    const { data } = await supabase
+      .from('debts')
+      .select('*')
+      .or(`assigned_to.eq.${currentUserId},created_by.eq.${currentUsername}`)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+
+    if (data) {
       // Deduplicate by ID to prevent duplicate keys
       const uniqueDebts = Array.from(
-        new Map(filtered.map(d => [d.id, d])).values()
+        new Map(data.map(d => [d.id, d])).values()
       )
       setDebts(uniqueDebts)
       setPreviousDebtIds(new Set(uniqueDebts.map(d => d.id)))
-      setCurrentPage(1) // Reset to page 1 when debts change
+      setCurrentPage(1)
       
       // Load payments for each debt
       loadPaymentsForDebts(uniqueDebts)
     }
-  }, [currentUserId, currentUsername, initialDebts])
+    setLoading(false)
+  }
 
   const loadPaymentsForDebts = async (debtList: Debt[]) => {
     const debtIds = debtList.map(d => d.id)
