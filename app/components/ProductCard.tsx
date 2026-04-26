@@ -16,9 +16,10 @@ interface ProductCardProps {
   isCreator: boolean
   onDelete: (id: string) => void
   onAddToCart: (product: Product) => void
+  onEdit: (product: Product) => void
 }
 
-export default function ProductCard({ product, isCreator, onDelete, onAddToCart }: ProductCardProps) {
+export default function ProductCard({ product, isCreator, onDelete, onAddToCart, onEdit }: ProductCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 flex gap-4">
       {product.image_url ? (
@@ -42,12 +43,20 @@ export default function ProductCard({ product, isCreator, onDelete, onAddToCart 
             + Thêm vào giỏ nợ
           </button>
           {isCreator && (
-            <button
-              onClick={() => onDelete(product.id)}
-              className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
-            >
-              Xóa
-            </button>
+            <>
+              <button
+                onClick={() => onEdit(product)}
+                className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+              >
+                Sửa
+              </button>
+              <button
+                onClick={() => onDelete(product.id)}
+                className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors text-sm"
+              >
+                Xóa
+              </button>
+            </>
           )}
         </div>
       </div>

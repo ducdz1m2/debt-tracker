@@ -45,6 +45,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
   const [showProductForm, setShowProductForm] = useState(false)
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [showAssigneeModal, setShowAssigneeModal] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [currentUsername, setCurrentUsername] = useState<string | null>(null)
   const [users, setUsers] = useState<User[]>([])
@@ -158,6 +159,53 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
         text: 'Lỗi xóa sản phẩm'
       })
     }
+  }
+
+  const handleUpdateProduct = async (product: { id: string; title: string; price: string; imageUrl: string; purchaseLocation: string }) => {
+    const userId = localStorage.getItem('user_id')
+    if (!userId) return
+
+    const res = await fetch('/api/products/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        purchaseLocation: product.purchaseLocation,
+      }),
+    })
+
+    if (res.ok) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công!',
+        text: 'Đã cập nhật sản phẩm!',
+        timer: 1500,
+        showConfirmButton: false
+      })
+      setShowProductForm(false)
+      setEditingProduct(null)
+      loadProducts(userId)
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Lỗi cập nhật sản phẩm'
+      })
+    }
+  }
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product)
+    setShowProductForm(true)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null)
+    setShowProductForm(false)
   }
 
   const handleAddToCart = (product: Product) => {
@@ -437,7 +485,13 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-700">📦 Sản phẩm</h2>
               <button
-                onClick={() => setShowProductForm(!showProductForm)}
+                onClick={() => {
+                  if (showProductForm && editingProduct) {
+                    handleCancelEdit()
+                  } else {
+                    setShowProductForm(!showProductForm)
+                  }
+                }}
                 className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors text-sm w-full sm:w-auto"
               >
                 {showProductForm ? 'Đóng' : '+ Thêm sản phẩm'}
@@ -445,7 +499,12 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
             </div>
 
             {showProductForm && (
-              <ProductForm onCreateProduct={handleCreateProduct} />
+              <ProductForm
+                onCreateProduct={handleCreateProduct}
+                onUpdateProduct={handleUpdateProduct}
+                editingProduct={editingProduct}
+                onCancelEdit={handleCancelEdit}
+              />
             )}
 
             <div className="space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
@@ -457,6 +516,7 @@ export default function HomeContent({ initialDebts }: HomeContentProps) {
                     isCreator={product.created_by === currentUserId}
                     onDelete={handleDeleteProduct}
                     onAddToCart={handleAddToCart}
+                    onEdit={handleEditProduct}
                   />
                 ))
               ) : (
